@@ -8,24 +8,65 @@ export default function CreateSecretSantaPage() {
   const [eventDate, setEventDate] = useState('');
   const [budget, setBudget] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to backend API
-    console.log({
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    // Convert date to ISO string format for the backend
+    const eventData = {
       title,
       description,
-      eventDate,
+      eventDate: eventDate ? new Date(eventDate).toISOString() : '',
       budget: budget ? Number(budget) : undefined,
       ownerEmail,
-    });
-    // Here you would typically send the data to your backend API
-    // For example:
-    // await fetch('/api/events', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ title, description, eventDate, budget, ownerEmail }),
-    // });
+    };
+
+    try {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      });
+
+      const responseText = await response.text();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse JSON response:", responseText);
+        throw new Error("The server returned an invalid response. Check the console for more details.");
+      }
+
+
+      if (!response.ok) {
+        // Assuming the backend returns a message or an array of messages
+        const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'An unknown error occurred.';
+        setError(errorMessage);
+      } else {
+        setSuccess('Event created successfully! You can now invite participants.');
+        // Reset form
+        setTitle('');
+        setDescription('');
+        setEventDate('');
+        setBudget('');
+        setOwnerEmail('');
+      }
+
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,6 +77,9 @@ export default function CreateSecretSantaPage() {
           <p className="mt-2 text-gray-600">Let the festive fun begin!</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {success && <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">{success}</div>}
+          {error && <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">{error}</div>}
+
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium text-gray-700">
               Event Title
@@ -47,7 +91,7 @@ export default function CreateSecretSantaPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="e.g., Office Christmas Party"
             />
           </div>
@@ -62,7 +106,7 @@ export default function CreateSecretSantaPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="e.g., A little get-together to celebrate the holidays."
             />
           </div>
@@ -79,7 +123,7 @@ export default function CreateSecretSantaPage() {
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               />
             </div>
             <div className="space-y-2">
@@ -93,7 +137,7 @@ export default function CreateSecretSantaPage() {
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 min="0"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
                 placeholder="e.g., 20"
               />
             </div>
@@ -110,20 +154,20 @@ export default function CreateSecretSantaPage() {
               value={ownerEmail}
               onChange={(e) => setOwnerEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="you@example.com"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+            disabled={isLoading}
+            className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
           >
-            Create Event & Invite Participants
+            {isLoading ? 'Creating...' : 'Create Event & Invite Participants'}
           </button>
         </form>
       </div>
     </div>
   );
 }
-
