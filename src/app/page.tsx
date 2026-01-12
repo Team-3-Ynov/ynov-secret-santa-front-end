@@ -1,5 +1,5 @@
-import CreateSecretSantaPage from './secretsanta/create/page';
+import LoginPage from './auth/login/page';
 
 export default function Home() {
-  return <CreateSecretSantaPage />;
+  return <LoginPage />;
 }
