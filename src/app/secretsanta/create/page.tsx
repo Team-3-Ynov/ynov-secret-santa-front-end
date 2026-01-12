@@ -28,7 +28,8 @@ export default function CreateSecretSantaPage() {
     };
 
     try {
-      const response = await fetch('/api/events', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${apiUrl}/api/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData),
