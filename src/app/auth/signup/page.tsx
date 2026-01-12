@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,21 +18,30 @@ export default function SignupPage() {
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, username }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'An unknown error occurred.';
+        let errorMessage = 'An unknown error occurred.';
+        if (result.errors && Array.isArray(result.errors)) {
+          errorMessage = result.errors.map((e: { field: string; message: string }) => `${e.field}: ${e.message}`).join(', ');
+        } else if (Array.isArray(result.message)) {
+          errorMessage = result.message.join(', ');
+        } else if (result.message) {
+          errorMessage = result.message;
+        }
         throw new Error(errorMessage);
       }
 
       setSuccess('Account created successfully! You can now log in.');
       setEmail('');
+      setUsername('');
       setPassword('');
     } catch (err) {
       if (err instanceof Error) {
@@ -68,6 +78,22 @@ export default function SignupPage() {
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="you@example.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="username" className="text-sm font-medium text-gray-700">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+              placeholder="johndoe"
             />
           </div>
 

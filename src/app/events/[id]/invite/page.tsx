@@ -21,7 +21,7 @@ export default function InvitePage() {
                 throw new Error('Vous devez être connecté pour envoyer des invitations.');
             }
 
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
             const res = await fetch(`${apiUrl}/api/events/${id}/invite`, {
                 method: 'POST',
                 headers: {
