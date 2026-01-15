@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function CreateSecretSantaPage() {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [eventDate, setEventDate] = useState('');
@@ -28,9 +30,14 @@ export default function CreateSecretSantaPage() {
     };
 
     try {
-      const response = await fetch('/api/events', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/events`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
         body: JSON.stringify(eventData),
       });
 
@@ -49,13 +56,13 @@ export default function CreateSecretSantaPage() {
         const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'An unknown error occurred.';
         setError(errorMessage);
       } else {
-        setSuccess('Event created successfully! You can now invite participants.');
-        // Reset form
-        setTitle('');
-        setDescription('');
-        setEventDate('');
-        setBudget('');
-        setOwnerEmail('');
+        // Redirect to edit page where they can now invite participants
+        const eventId = result.data?.id;
+        if (eventId) {
+          router.push(`/secretsanta/edit/${eventId}`);
+        } else {
+          setSuccess('Event created successfully! You can now edit it and invite participants.');
+        }
       }
 
     } catch (err) {

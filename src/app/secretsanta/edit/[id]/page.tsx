@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import InviteDialog from '@/components/InviteDialog';
 
 export default function EditSecretSantaPage() {
   const [title, setTitle] = useState('');
@@ -11,10 +12,11 @@ export default function EditSecretSantaPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const params = useParams();
   const router = useRouter();
-  const id = params.id;
+  const id = params.id as string;
 
   useEffect(() => {
     if (!id) return;
@@ -22,7 +24,12 @@ export default function EditSecretSantaPage() {
     const fetchEventData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/events/${id}`);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${apiUrl}/api/events/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch event data.');
         }
@@ -33,10 +40,10 @@ export default function EditSecretSantaPage() {
         setBudget(data.budget?.toString() || '');
       } catch (err) {
         if (err instanceof Error) {
-            setError(err.message);
-          } else {
-            setError('An unknown error occurred while fetching event data.');
-          }
+          setError(err.message);
+        } else {
+          setError('An unknown error occurred while fetching event data.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -81,11 +88,11 @@ export default function EditSecretSantaPage() {
         setSuccess('Event updated successfully!');
       }
     } catch (err) {
-        if (err instanceof Error) {
-            setError(err.message);
-          } else {
-            setError('An unknown error occurred.');
-          }
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,11 +100,22 @@ export default function EditSecretSantaPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans">
-      <div className="w-full max-w-lg p-8 space-y-8 bg-white rounded-xl shadow-lg">
+      <div className="w-full max-w-lg p-8 space-y-8 bg-white rounded-xl shadow-lg relative">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-red-600">Edit Secret Santa</h1>
           <p className="mt-2 text-gray-600">Update your event details below.</p>
         </div>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setIsInviteDialogOpen(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Invite Participants
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {success && <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">{success}</div>}
           {error && <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">{error}</div>}
@@ -171,6 +189,12 @@ export default function EditSecretSantaPage() {
           </button>
         </form>
       </div>
+
+      <InviteDialog
+        isOpen={isInviteDialogOpen}
+        onClose={() => setIsInviteDialogOpen(false)}
+        eventId={id}
+      />
     </div>
   );
 }

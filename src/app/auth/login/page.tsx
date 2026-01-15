@@ -17,7 +17,8 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -32,7 +33,7 @@ export default function LoginPage() {
 
       // Assuming the backend returns a token that you might want to store
       // For example, in localStorage or a cookie
-      localStorage.setItem('token', result.token);
+      localStorage.setItem('token', result.data.token);
 
       router.push('/secretsanta/create'); // Redirect to secret santa creation page on successful login
     } catch (err) {
