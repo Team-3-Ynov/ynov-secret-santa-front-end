@@ -19,8 +19,7 @@ export default function SignupPage() {
     setSuccess(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/auth/register`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, username }),
@@ -112,9 +111,8 @@ export default function SignupPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="••••••••"
             />
+            <PasswordRequirements password={password} />
           </div>
-
-          <PasswordRequirements password={password} />
 
           <button
             type="submit"
@@ -136,4 +134,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

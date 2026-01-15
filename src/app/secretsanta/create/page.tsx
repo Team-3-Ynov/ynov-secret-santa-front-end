@@ -1,6 +1,10 @@
 'use client';
 
+<<<<<<< HEAD
 import { useState } from 'react';
+=======
+import { useState, useEffect } from 'react';
+>>>>>>> 0057367 (feat: Implement user authentication (login, signup) and Secret Santa event management (create, edit) pages, along with Tailwind CSS setup.)
 import { useRouter } from 'next/navigation';
 
 export default function CreateSecretSantaPage() {
@@ -29,7 +33,15 @@ export default function CreateSecretSantaPage() {
       ownerEmail,
     };
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('You must be logged in to create an event.');
+      router.push('/auth/login');
+      return;
+    }
+
     try {
+<<<<<<< HEAD
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const token = localStorage.getItem('token');
       const response = await fetch(`${apiUrl}/api/events`, {
@@ -37,6 +49,13 @@ export default function CreateSecretSantaPage() {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
+=======
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+>>>>>>> 0057367 (feat: Implement user authentication (login, signup) and Secret Santa event management (create, edit) pages, along with Tailwind CSS setup.)
         },
         body: JSON.stringify(eventData),
       });
