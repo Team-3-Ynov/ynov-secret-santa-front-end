@@ -56,12 +56,12 @@ export default function CreateSecretSantaPage() {
         const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'An unknown error occurred.';
         setError(errorMessage);
       } else {
-        // Redirect to invitation page with the created event ID
+        // Redirect to edit page where they can now invite participants
         const eventId = result.data?.id;
         if (eventId) {
-          router.push(`/events/${eventId}/invite`);
+          router.push(`/secretsanta/edit/${eventId}`);
         } else {
-          setSuccess('Event created successfully! You can now invite participants.');
+          setSuccess('Event created successfully! You can now edit it and invite participants.');
         }
       }
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import PasswordRequirements from '@/components/PasswordRequirements';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -112,6 +113,8 @@ export default function SignupPage() {
               placeholder="••••••••"
             />
           </div>
+
+          <PasswordRequirements password={password} />
 
           <button
             type="submit"
