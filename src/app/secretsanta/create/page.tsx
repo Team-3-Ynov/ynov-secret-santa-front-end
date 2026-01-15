@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function CreateSecretSantaPage() {
@@ -29,14 +29,19 @@ export default function CreateSecretSantaPage() {
       ownerEmail,
     };
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('You must be logged in to create an event.');
+      router.push('/auth/login');
+      return;
+    }
+
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/events`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(eventData),
       });

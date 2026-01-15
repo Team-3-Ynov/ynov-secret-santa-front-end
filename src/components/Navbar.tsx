@@ -27,6 +27,12 @@ export default function Navbar() {
                             >
                                 Créer un événement
                             </Link>
+                            <Link
+                                href="/events"
+                                className={`inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium ${isActive('/events')}`}
+                            >
+                                Mes Évènements
+                            </Link>
                         </div>
                     </div>
                     <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
