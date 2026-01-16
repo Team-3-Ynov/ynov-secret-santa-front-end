@@ -40,10 +40,14 @@ export default function InvitePage() {
             setStatus('success');
             setMessage(`Invitation envoyée à ${email} !`);
             setEmail('');
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
             setStatus('error');
-            setMessage(error.message || 'Une erreur est survenue.');
+            if (error instanceof Error) {
+                setMessage(error.message);
+            } else {
+                setMessage('Une erreur est survenue.');
+            }
         }
     };
 
@@ -55,7 +59,7 @@ export default function InvitePage() {
                         Inviter un participant
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
-                        Envoyez une invitation par email pour rejoindre l'évènement.
+                        Envoyez une invitation par email pour rejoindre l&apos;évènement.
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleInvite}>
