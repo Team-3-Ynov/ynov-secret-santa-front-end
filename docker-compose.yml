@@ -3,12 +3,12 @@ services:
   # Frontend Next.js
   # ═══════════════════════════════════════════════════════════════
   frontend:
-    image: ghcr.io/team-3-ynov/ynov-secret-santa-front-end:${IMAGE_TAG:-staging}
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    #   args:
-    #     - NEXT_PUBLIC_API_URL=http://localhost:${NGINX_PORT:-80}
+    # image: ghcr.io/team-3-ynov/ynov-secret-santa-front-end:${IMAGE_TAG:-staging}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:${NGINX_PORT:-80}
     container_name: secret_santa_frontend
     ports:
       - "3001:3001"
