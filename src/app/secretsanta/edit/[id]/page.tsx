@@ -10,6 +10,7 @@ export default function EditSecretSantaPage() {
   const [eventDate, setEventDate] = useState('');
   const [budget, setBudget] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -22,7 +23,7 @@ export default function EditSecretSantaPage() {
     if (!id) return;
 
     const fetchEventData = async () => {
-      setIsLoading(true);
+      setIsFetching(true);
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -30,27 +31,39 @@ export default function EditSecretSantaPage() {
           return;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${id}`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${apiUrl}/api/events/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
+
         if (!response.ok) {
-          throw new Error('Failed to fetch event data.');
+          if (response.status === 404) {
+            throw new Error('Événement non trouvé.');
+          }
+          throw new Error('Erreur lors de la récupération des données.');
         }
-        const data = await response.json();
-        setTitle(data.title);
+
+        const result = await response.json();
+        const data = result.data || result;
+
+        setTitle(data.title || '');
         setDescription(data.description || '');
-        setEventDate(data.eventDate.split('T')[0]); // Format date for input
+        // Handle date format (could be ISO string)
+        if (data.eventDate) {
+          const dateStr = data.eventDate.split('T')[0];
+          setEventDate(dateStr);
+        }
         setBudget(data.budget?.toString() || '');
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError('An unknown error occurred while fetching event data.');
+          setError('Une erreur inconnue est survenue.');
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     };
 
@@ -63,23 +76,30 @@ export default function EditSecretSantaPage() {
     setError(null);
     setSuccess(null);
 
-    const eventData = {
-      title,
-      description,
-      eventDate: eventDate ? new Date(eventDate).toISOString() : '',
-      budget: budget ? Number(budget) : undefined,
-    };
+    const eventData: {
+      title?: string;
+      description?: string;
+      eventDate?: string;
+      budget?: number;
+    } = {};
+
+    // Only include fields that have values
+    if (title.trim()) eventData.title = title;
+    if (description.trim()) eventData.description = description;
+    if (eventDate) eventData.eventDate = new Date(eventDate).toISOString();
+    if (budget) eventData.budget = Number(budget);
 
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setError('You must be logged in to update an event.');
+        setError('Vous devez être connecté pour modifier un événement.');
         router.push('/auth/login');
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${id}`, {
-        method: 'PUT', // or PATCH
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/events/${id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -91,43 +111,99 @@ export default function EditSecretSantaPage() {
       let result;
       try {
         result = JSON.parse(responseText);
-      } catch (e) {
+      } catch {
         console.error("Failed to parse JSON response:", responseText);
-        throw new Error("The server returned an invalid response.");
+        throw new Error("Le serveur a retourné une réponse invalide.");
       }
 
       if (!response.ok) {
-        const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'An unknown error occurred.';
+        const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'Une erreur inconnue est survenue.';
         setError(errorMessage);
       } else {
-        setSuccess('Event updated successfully!');
+        setSuccess('Événement mis à jour avec succès !');
       }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('An unknown error occurred.');
+        setError('Une erreur inconnue est survenue.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/events/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.message || 'Erreur lors de la suppression.');
+      }
+
+      router.push('/events');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Une erreur inconnue est survenue.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isFetching) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans py-8">
       <div className="w-full max-w-lg p-8 space-y-8 bg-white rounded-xl shadow-lg relative">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-red-600">Edit Secret Santa</h1>
-          <p className="mt-2 text-gray-600">Update your event details below.</p>
+          <h1 className="text-4xl font-bold text-red-600">Modifier l&apos;événement</h1>
+          <p className="mt-2 text-gray-600">Mettez à jour les détails de votre Secret Santa.</p>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-between">
           <button
             type="button"
             onClick={() => setIsInviteDialogOpen(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
           >
-            Invite Participants
+            ✉️ Inviter des participants
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isLoading}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+          >
+            🗑️ Supprimer
           </button>
         </div>
 
@@ -137,7 +213,7 @@ export default function EditSecretSantaPage() {
 
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium text-gray-700">
-              Event Title
+              Nom de l&apos;événement
             </label>
             <input
               type="text"
@@ -152,7 +228,7 @@ export default function EditSecretSantaPage() {
 
           <div className="space-y-2">
             <label htmlFor="description" className="text-sm font-medium text-gray-700">
-              Description (Optional)
+              Description (Optionnel)
             </label>
             <textarea
               id="description"
@@ -167,7 +243,7 @@ export default function EditSecretSantaPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label htmlFor="eventDate" className="text-sm font-medium text-gray-700">
-                Event Date
+                Date de l&apos;événement
               </label>
               <input
                 type="date"
@@ -181,7 +257,7 @@ export default function EditSecretSantaPage() {
             </div>
             <div className="space-y-2">
               <label htmlFor="budget" className="text-sm font-medium text-gray-700">
-                Budget (€, Optional)
+                Budget (€, Optionnel)
               </label>
               <input
                 type="number"
@@ -200,7 +276,7 @@ export default function EditSecretSantaPage() {
             disabled={isLoading}
             className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Saving...' : 'Save Changes'}
+            {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
           </button>
         </form>
       </div>
