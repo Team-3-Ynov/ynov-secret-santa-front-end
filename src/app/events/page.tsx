@@ -22,7 +22,9 @@ export default function EventsListPage() {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
-                    throw new Error('Vous devez être connecté pour voir vos évènements.');
+                    setError('Vous devez être connecté pour voir vos évènements.');
+                    setLoading(false);
+                    return;
                 }
 
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -33,13 +35,23 @@ export default function EventsListPage() {
                 });
 
                 if (!res.ok) {
-                    throw new Error('Erreur lors du chargement des évènements');
+                    if (res.status === 401) {
+                        setError('Session expirée. Veuillez vous reconnecter.');
+                        return;
+                    }
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Erreur lors du chargement des évènements');
                 }
 
-                const data = await res.json();
-                setEvents(data);
-            } catch (err: any) {
-                setError(err.message);
+                const result = await res.json();
+                // Handle both { data: [...] } and direct array response
+                setEvents(result.data || result || []);
+            } catch (err) {
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError('Une erreur inconnue est survenue');
+                }
             } finally {
                 setLoading(false);
             }
@@ -102,32 +114,54 @@ export default function EventsListPage() {
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {events.map((event) => (
-                            <Link key={event.id} href={`/events/${event.id}`}>
-                                <div className="bg-white overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 cursor-pointer h-full flex flex-col">
-                                    <div className="h-2 bg-red-500"></div>
-                                    <div className="p-6 flex-1 flex flex-col">
-                                        <div className="flex-1">
-                                            <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate" title={event.title}>
+                            <div key={event.id} className="bg-white overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 h-full flex flex-col">
+                                <div className="h-2 bg-red-500"></div>
+                                <div className="p-6 flex-1 flex flex-col">
+                                    <div className="flex-1">
+                                        <Link href={`/events/${event.id}`}>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate hover:text-red-600 cursor-pointer" title={event.title}>
                                                 {event.title}
                                             </h3>
-                                            <p className="text-sm text-gray-500 line-clamp-2 mb-4">
-                                                {event.description || "Pas de description."}
-                                            </p>
-                                        </div>
-                                        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-                                            <span className="flex items-center">
-                                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                                {new Date(event.eventDate).toLocaleDateString()}
-                                            </span>
-                                            <span className="flex items-center text-gray-900 font-medium">
-                                                {event.budget}€
-                                            </span>
-                                        </div>
+                                        </Link>
+                                        <p className="text-sm text-gray-500 line-clamp-2 mb-4">
+                                            {event.description || "Pas de description."}
+                                        </p>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                                        <span className="flex items-center">
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            {new Date(event.eventDate).toLocaleDateString('fr-FR')}
+                                        </span>
+                                        <span className="flex items-center text-gray-900 font-medium">
+                                            {event.budget ? `${event.budget}€` : '-'}
+                                        </span>
+                                    </div>
+                                    {/* Boutons d'action */}
+                                    <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
+                                        <Link
+                                            href={`/events/${event.id}`}
+                                            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            Voir
+                                        </Link>
+                                        <Link
+                                            href={`/secretsanta/edit/${event.id}`}
+                                            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Modifier
+                                        </Link>
                                     </div>
                                 </div>
-                            </Link>
+                            </div>
                         ))}
                     </div>
                 )}

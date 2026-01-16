@@ -68,8 +68,8 @@ function SignupForm() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-lg">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-800">Create an Account</h1>
-          <p className="mt-2 text-gray-600">Join the Secret Santa fun!</p>
+          <h1 className="text-4xl font-bold text-gray-800">Créer un compte</h1>
+          <p className="mt-2 text-gray-600">Rejoignez l&apos;aventure Secret Santa !</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           {success && <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">{success}</div>}
@@ -77,7 +77,7 @@ function SignupForm() {
 
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-gray-700">
-              Email Address
+              Adresse email
             </label>
             <input
               type="email"
@@ -87,13 +87,13 @@ function SignupForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
-              placeholder="you@example.com"
+              placeholder="vous@exemple.com"
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium text-gray-700">
-              Username
+              Nom d&apos;utilisateur
             </label>
             <input
               type="text"
@@ -103,13 +103,13 @@ function SignupForm() {
               onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
-              placeholder="johndoe"
+              placeholder="jean_dupont"
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-gray-700">
-              Password
+              Mot de passe
             </label>
             <input
               type="password"
@@ -129,14 +129,14 @@ function SignupForm() {
             disabled={isLoading}
             className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Creating Account...' : 'Create Account'}
+            {isLoading ? 'Création en cours...' : 'Créer mon compte'}
           </button>
         </form>
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
+            Déjà un compte ?{' '}
             <Link href="/auth/login" className="font-medium text-red-600 hover:underline">
-              Log in
+              Se connecter
             </Link>
           </p>
         </div>
