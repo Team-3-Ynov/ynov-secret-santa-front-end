@@ -2,9 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import PasswordRequirements from '@/components/PasswordRequirements';
 
 export default function SignupPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -39,10 +43,16 @@ export default function SignupPage() {
         throw new Error(errorMessage);
       }
 
-      setSuccess('Account created successfully! You can now log in.');
+      setSuccess('Account created successfully! Redirecting to login...');
       setEmail('');
       setUsername('');
       setPassword('');
+
+      // Redirect to login page, preserving the redirect URL
+      setTimeout(() => {
+        const loginUrl = redirectUrl ? `/auth/login?redirect=${encodeURIComponent(redirectUrl)}` : '/auth/login';
+        router.push(loginUrl);
+      }, 1500);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

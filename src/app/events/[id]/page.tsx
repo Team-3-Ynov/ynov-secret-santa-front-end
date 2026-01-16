@@ -14,16 +14,23 @@ interface Event {
     createdAt: string;
 }
 
+interface Participant {
+    id: number;
+    username: string;
+    email: string;
+}
+
 export default function EventPage() {
     const { id } = useParams();
     const [event, setEvent] = useState<Event | null>(null);
+    const [participants, setParticipants] = useState<Participant[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showInviteDialog, setShowInviteDialog] = useState(false);
     const [copySuccess, setCopySuccess] = useState('');
 
     useEffect(() => {
-        const fetchEvent = async () => {
+        const fetchEventData = async () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
@@ -31,19 +38,29 @@ export default function EventPage() {
                 }
 
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-                const res = await fetch(`${apiUrl}/api/events/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
 
-                if (!res.ok) {
-                    if (res.status === 404) throw new Error('Évènement non trouvé');
+                // Fetch event and participants in parallel
+                const [eventRes, participantsRes] = await Promise.all([
+                    fetch(`${apiUrl}/api/events/${id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${apiUrl}/api/events/${id}/participants`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                if (!eventRes.ok) {
+                    if (eventRes.status === 404) throw new Error('Évènement non trouvé');
                     throw new Error('Erreur lors du chargement de l\'évènement');
                 }
 
-                const data = await res.json();
-                setEvent(data);
+                const eventData = await eventRes.json();
+                setEvent(eventData.data);
+
+                if (participantsRes.ok) {
+                    const participantsData = await participantsRes.json();
+                    setParticipants(participantsData.data || []);
+                }
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -52,7 +69,7 @@ export default function EventPage() {
         };
 
         if (id) {
-            fetchEvent();
+            fetchEventData();
         }
     }, [id]);
 
@@ -122,12 +139,32 @@ export default function EventPage() {
                             </p>
                         </div>
 
-                        {/* Participants Section (Placeholder for now) */}
+                        {/* Participants Section */}
                         <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Participants</h2>
-                            <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500">
-                                La liste des participants apparaîtra ici une fois qu'ils auront accepté l'invitation.
-                            </div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                                Participants ({participants.length})
+                            </h2>
+                            {participants.length === 0 ? (
+                                <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500">
+                                    La liste des participants apparaîtra ici une fois qu'ils auront accepté l'invitation.
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {participants.map((participant) => (
+                                        <div key={participant.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                                <span className="text-red-600 font-semibold text-sm">
+                                                    {participant.username.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">{participant.username}</p>
+                                                <p className="text-sm text-gray-500">{participant.email}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 

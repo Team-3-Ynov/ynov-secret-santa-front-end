@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,9 +34,10 @@ export default function LoginPage() {
 
       // Assuming the backend returns a token that you might want to store
       // For example, in localStorage or a cookie
-      localStorage.setItem('token', result.data.token);
+      localStorage.setItem('token', result.data.accessToken);
 
-      router.push('/secretsanta/create'); // Redirect to secret santa creation page on successful login
+      // Redirect to the specified URL or default to create page
+      router.push(redirectUrl || '/secretsanta/create');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
