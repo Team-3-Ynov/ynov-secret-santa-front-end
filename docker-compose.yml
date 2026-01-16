@@ -22,8 +22,8 @@ services:
     #   - nginx 
     restart: unless-stopped
     networks:
-      - app-network
+      - frontend-backend
 
 networks:
-  app-network:
+  frontend-backend:
     driver: bridge
