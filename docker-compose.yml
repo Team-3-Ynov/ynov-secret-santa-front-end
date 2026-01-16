@@ -1,0 +1,29 @@
+services:
+  # ═══════════════════════════════════════════════════════════════
+  # Frontend Next.js
+  # ═══════════════════════════════════════════════════════════════
+  frontend:
+    image: ghcr.io/team-3-ynov/ynov-secret-santa-front-end:${IMAGE_TAG:-staging}
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     - NEXT_PUBLIC_API_URL=http://localhost:${NGINX_PORT:-80}
+    container_name: secret_santa_frontend
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    # Note: Depends on Nginx/Backend but those are defined in another file. 
+    # Docker Compose include merges them so it should resolve if loaded together, 
+    # or we remove the strict dependency check here if it causes issues isolated.
+    # For now, we assume they are run together.
+    # depends_on:
+    #   - nginx 
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
