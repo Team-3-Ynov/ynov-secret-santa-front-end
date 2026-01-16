@@ -23,6 +23,9 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN pnpm build
 
 # Production image, copy all the files and run next
@@ -36,6 +39,9 @@ ENV PORT 3001
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
 
 COPY --from=builder /app/public ./public
 
