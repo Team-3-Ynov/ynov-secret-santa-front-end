@@ -118,7 +118,6 @@ jobs:
             echo "::warning::SSH_PRIVATE_KEY secret is not configured. Add it for real deployment."
           else
             echo "✅ SSH_PRIVATE_KEY secret is configured" >> $GITHUB_STEP_SUMMARY
-            echo "🔐 Key preview (first 50 chars): $(echo '${{ secrets.SSH_PRIVATE_KEY }}' | head -c 50)..."
           fi
 
       - name: ✅ Staging deployment simulation
