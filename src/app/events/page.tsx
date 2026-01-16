@@ -9,7 +9,6 @@ interface Event {
     description: string;
     eventDate: string;
     budget: number;
-    ownerEmail: string;
     createdAt: string;
 }
 
