@@ -114,25 +114,11 @@ function LoginForm() {
           </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Logging in...' : 'Log In'}
-        </button>
-      </form>
-      <div className="text-center">
-        <p className="text-sm text-gray-600">
-          Don&#39;t have an account?{' '}
-          <Link href="/auth/signup" className="font-medium text-red-600 hover:underline">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   );
 }
+
 
 export default function LoginPage() {
   return (
