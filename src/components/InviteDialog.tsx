@@ -72,10 +72,14 @@ export default function InviteDialog({ isOpen, onClose, eventId }: InviteDialogP
             setEmail('');
 
             // Optional: don't close immediately so user can see success message or invite more
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
             setStatus('error');
-            setMessage(error.message || 'Une erreur est survenue.');
+            if (error instanceof Error) {
+                setMessage(error.message);
+            } else {
+                setMessage('Une erreur est survenue.');
+            }
         }
     };
 
@@ -105,7 +109,7 @@ export default function InviteDialog({ isOpen, onClose, eventId }: InviteDialogP
                         </h3>
                         <div className="mt-2">
                             <p className="text-sm text-gray-500">
-                                Envoyez une invitation par email pour rejoindre l'évènement.
+                                Envoyez une invitation par email pour rejoindre l&apos;évènement.
                             </p>
                         </div>
 

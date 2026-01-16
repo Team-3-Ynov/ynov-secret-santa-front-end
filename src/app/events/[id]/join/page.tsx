@@ -1,28 +1,40 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function JoinEventPage() {
     const { id } = useParams();
     const router = useRouter();
-    const [loading, setLoading] = useState(false);
+    const searchParams = useSearchParams();
+    const inviteToken = searchParams.get('token'); // Token d'invitation depuis l'URL
+
     const [joining, setJoining] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    // Construire l'URL de redirection avec le token d'invitation
+    const redirectUrl = inviteToken
+        ? `/events/${id}/join?token=${inviteToken}`
+        : `/events/${id}/join`;
+
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token);
+        const authToken = localStorage.getItem('token');
+        setIsLoggedIn(!!authToken);
     }, []);
 
     const handleJoinEvent = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            // Redirect to login, then come back
-            router.push(`/auth/login?redirect=/events/${id}/join`);
+        const authToken = localStorage.getItem('token');
+        if (!authToken) {
+            // Redirect to login, then come back with the invite token
+            router.push(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`);
+            return;
+        }
+
+        if (!inviteToken) {
+            setError('Token d\'invitation manquant. Veuillez utiliser le lien d\'invitation complet.');
             return;
         }
 
@@ -34,19 +46,21 @@ export default function JoinEventPage() {
             const res = await fetch(`${apiUrl}/api/events/${id}/join`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${authToken}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ token: inviteToken })
             });
 
             const data = await res.json();
 
             if (!res.ok) {
                 if (res.status === 401) {
-                    // Token expired or invalid
+                    // Auth token expired or invalid
                     localStorage.removeItem('token');
+                    localStorage.removeItem('refreshToken');
                     setIsLoggedIn(false);
-                    router.push(`/auth/login?redirect=/events/${id}/join`);
+                    router.push(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`);
                     return;
                 }
                 throw new Error(data.message || 'Erreur lors de la tentative de rejoindre l\'évènement');
@@ -57,8 +71,12 @@ export default function JoinEventPage() {
             setTimeout(() => {
                 router.push(`/events/${id}`);
             }, 2000);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Une erreur inconnue est survenue');
+            }
         } finally {
             setJoining(false);
         }
@@ -73,7 +91,7 @@ export default function JoinEventPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Rejoindre l'évènement</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Rejoindre l&apos;évènement</h1>
                     <p className="text-gray-600">
                         Vous avez été invité à participer à un Secret Santa !
                     </p>
@@ -117,13 +135,13 @@ export default function JoinEventPage() {
                                     Vous devez être connecté pour rejoindre cet évènement.
                                 </p>
                                 <Link
-                                    href={`/auth/login?redirect=/events/${id}/join`}
+                                    href={`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`}
                                     className="block w-full py-3 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors text-center"
                                 >
                                     Se connecter
                                 </Link>
                                 <Link
-                                    href={`/auth/signup?redirect=/events/${id}/join`}
+                                    href={`/auth/signup?redirect=${encodeURIComponent(redirectUrl)}`}
                                     className="block w-full py-3 px-4 bg-white text-red-600 font-semibold rounded-lg border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors text-center"
                                 >
                                     Créer un compte
@@ -135,7 +153,7 @@ export default function JoinEventPage() {
 
                 <div className="mt-6 pt-6 border-t border-gray-100">
                     <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
-                        ← Retour à l'accueil
+                        ← Retour à l&apos;accueil
                     </Link>
                 </div>
             </div>
