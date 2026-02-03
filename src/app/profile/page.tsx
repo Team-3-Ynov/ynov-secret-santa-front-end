@@ -195,8 +195,11 @@ export default function ProfilePage() {
     };
 
     const getInitials = (user: User) => {
-        if (user.firstName && user.lastName) {
-            return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+        const firstName = user.firstName?.trim();
+        const lastName = user.lastName?.trim();
+
+        if (firstName && lastName) {
+            return `${firstName[0]}${lastName[0]}`.toUpperCase();
         }
         if (user.username) {
             return user.username.substring(0, 2).toUpperCase();
