@@ -132,16 +132,19 @@ export default function ProfilePage() {
         
         // MOCK MODE: Simulate save
         setTimeout(() => {
-            setUser(prev => prev ? {
-                ...prev,
-                username: formData.username,
-                firstName: formData.firstName,
-                lastName: formData.lastName
-            } : null);
-            setIsEditing(false);
-            setIsSaving(false);
-            setSaveSuccess(true);
-            setTimeout(() => setSaveSuccess(false), 3000);
+            try {
+                setUser(prev => prev ? {
+                    ...prev,
+                    username: formData.username,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName
+                } : null);
+                setIsEditing(false);
+                setSaveSuccess(true);
+                setTimeout(() => setSaveSuccess(false), 3000);
+            } finally {
+                setIsSaving(false);
+            }
         }, 500);
 
         /* 
