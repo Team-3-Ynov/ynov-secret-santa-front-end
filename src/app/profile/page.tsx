@@ -220,7 +220,7 @@ export default function ProfilePage() {
             <div className="max-w-4xl mx-auto space-y-8">
                 {/* Header Section */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="h-32 bg-linear-to-r from-red-600 to-red-800 relative">
+                    <div className="h-32 bg-gradient-to-r from-red-600 to-red-800 relative">
                         <div className="absolute -bottom-12 left-8">
                             <div className="h-24 w-24 rounded-full bg-white p-1 shadow-lg">
                                 <div className="h-full w-full rounded-full bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-600">
