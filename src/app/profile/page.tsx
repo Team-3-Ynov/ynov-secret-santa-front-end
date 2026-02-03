@@ -11,21 +11,61 @@ interface User {
     firstName?: string;
     lastName?: string;
     createdAt?: string;
+    stats?: {
+        eventsCreated: number;
+        participations: number;
+        giftsOffered: number;
+    };
 }
+
+const MOCK_USER: User = {
+    id: 'mock-id-123',
+    email: 'alice.wonder@example.com',
+    username: 'AliceInWonderland',
+    firstName: 'Alice',
+    lastName: 'Wonder',
+    createdAt: '2026-01-15T10:00:00Z',
+    stats: {
+        eventsCreated: 3,
+        participations: 5,
+        giftsOffered: 5
+    }
+};
 
 export default function ProfilePage() {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        username: '',
+        firstName: '',
+        lastName: ''
+    });
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
+            // MOCK MODE: Simulating API call
+            setTimeout(() => {
+                setUser(MOCK_USER);
+                setFormData({
+                    username: MOCK_USER.username || '',
+                    firstName: MOCK_USER.firstName || '',
+                    lastName: MOCK_USER.lastName || ''
+                });
+                setLoading(false);
+            }, 800); // Small delay for realism
+
+            /* 
+            // REAL API CALL (Commented out for Mock)
             const token = localStorage.getItem('token');
 
             if (!token) {
-                router.push('/auth/login');
-                return;
+                // For mock purposes, we allow viewing without token or redirect
+                // router.push('/auth/login');
+                // return;
             }
 
             try {
@@ -38,10 +78,7 @@ export default function ProfilePage() {
 
                 if (!res.ok) {
                     if (res.status === 401) {
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                        router.push('/auth/login');
-                        return;
+                         // Session expired handling
                     }
                     throw new Error('Erreur lors de la récupération du profil');
                 }
@@ -49,21 +86,86 @@ export default function ProfilePage() {
                 const result = await res.json();
                 const userData = result.data?.user || result.data || result;
                 setUser(userData);
-                // Update stored user data
-                localStorage.setItem('user', JSON.stringify(userData));
+                setFormData({
+                    username: userData.username || '',
+                    firstName: userData.firstName || '',
+                    lastName: userData.lastName || ''
+                });
             } catch (err) {
-                if (err instanceof Error) {
-                    setError(err.message);
-                } else {
-                    setError('Une erreur inconnue est survenue');
-                }
+                setError(err instanceof Error ? err.message : 'Une erreur inconnue est survenue');
             } finally {
                 setLoading(false);
             }
+            */
         };
 
         fetchProfile();
     }, [router]);
+
+    const handleEditToggle = () => {
+        if (isEditing) {
+            // Cancel editing - reset form data
+            setFormData({
+                username: user?.username || '',
+                firstName: user?.firstName || '',
+                lastName: user?.lastName || ''
+            });
+        }
+        setIsEditing(!isEditing);
+        setSaveSuccess(false);
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSave = async () => {
+        // MOCK MODE: Simulate save
+        setTimeout(() => {
+            setUser(prev => prev ? {
+                ...prev,
+                username: formData.username,
+                firstName: formData.firstName,
+                lastName: formData.lastName
+            } : null);
+            setIsEditing(false);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+        }, 500);
+
+        /* 
+        // REAL API CALL (Commented out for Mock)
+        try {
+            const token = localStorage.getItem('token');
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+            
+            const res = await fetch(`${apiUrl}/api/users/${user?.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!res.ok) {
+                throw new Error('Erreur lors de la mise à jour du profil');
+            }
+
+            const result = await res.json();
+            setUser(result.data);
+            setIsEditing(false);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+        }
+        */
+    };
 
     const handleLogout = async () => {
         try {
@@ -156,8 +258,41 @@ export default function ProfilePage() {
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center">
                                 <h3 className="text-lg font-semibold text-gray-900">Informations Personnelles</h3>
+                                <button
+                                    onClick={handleEditToggle}
+                                    className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${isEditing
+                                        ? 'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                                        : 'border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100'
+                                        }`}
+                                >
+                                    {isEditing ? (
+                                        <>
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Annuler
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Modifier
+                                        </>
+                                    )}
+                                </button>
                             </div>
                             <div className="p-6 space-y-6">
+                                {saveSuccess && (
+                                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
+                                        <div className="flex">
+                                            <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            <p className="ml-3 text-sm text-green-700 font-medium">Profil mis à jour avec succès !</p>
+                                        </div>
+                                    </div>
+                                )}
                                 {error && (
                                     <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
                                         <p className="text-sm text-red-700">{error}</p>
@@ -169,9 +304,20 @@ export default function ProfilePage() {
                                         <label className="block text-sm font-medium text-gray-500 mb-1">
                                             Nom d&apos;utilisateur
                                         </label>
-                                        <div className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                            {user?.username || '-'}
-                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                type="text"
+                                                name="username"
+                                                value={formData.username}
+                                                onChange={handleInputChange}
+                                                className="w-full text-gray-900 font-medium p-3 bg-white rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                                                placeholder="Nom d'utilisateur"
+                                            />
+                                        ) : (
+                                            <div className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                {user?.username || '-'}
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-500 mb-1">
@@ -185,19 +331,61 @@ export default function ProfilePage() {
                                         <label className="block text-sm font-medium text-gray-500 mb-1">
                                             Prénom
                                         </label>
-                                        <div className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                            {user?.firstName || '-'}
-                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                type="text"
+                                                name="firstName"
+                                                value={formData.firstName}
+                                                onChange={handleInputChange}
+                                                className="w-full text-gray-900 font-medium p-3 bg-white rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                                                placeholder="Prénom"
+                                            />
+                                        ) : (
+                                            <div className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                {user?.firstName || '-'}
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-500 mb-1">
                                             Nom
                                         </label>
-                                        <div className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                            {user?.lastName || '-'}
-                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                type="text"
+                                                name="lastName"
+                                                value={formData.lastName}
+                                                onChange={handleInputChange}
+                                                className="w-full text-gray-900 font-medium p-3 bg-white rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                                                placeholder="Nom"
+                                            />
+                                        ) : (
+                                            <div className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                {user?.lastName || '-'}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+
+                                {isEditing && (
+                                    <div className="pt-4 flex gap-3">
+                                        <button
+                                            onClick={handleSave}
+                                            className="flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Enregistrer
+                                        </button>
+                                        <button
+                                            onClick={handleEditToggle}
+                                            className="flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                                        >
+                                            Annuler
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -215,14 +403,21 @@ export default function ProfilePage() {
                                         <span className="text-2xl mr-4">🎄</span>
                                         <div>
                                             <p className="text-sm text-gray-500 font-medium">Événements</p>
-                                            <p className="text-xl font-bold text-gray-900">-</p>
+                                            <p className="text-xl font-bold text-gray-900">{user?.stats?.eventsCreated ?? 0}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center p-4 bg-green-50 rounded-xl border border-green-100">
                                         <span className="text-2xl mr-4">🎁</span>
                                         <div>
                                             <p className="text-sm text-gray-500 font-medium">Participations</p>
-                                            <p className="text-xl font-bold text-gray-900">-</p>
+                                            <p className="text-xl font-bold text-gray-900">{user?.stats?.participations ?? 0}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                        <span className="text-2xl mr-4">❄️</span>
+                                        <div>
+                                            <p className="text-sm text-gray-500 font-medium">Cadeaux offerts</p>
+                                            <p className="text-xl font-bold text-gray-900">{user?.stats?.giftsOffered ?? 0}</p>
                                         </div>
                                     </div>
                                 </div>
