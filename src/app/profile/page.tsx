@@ -26,6 +26,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState({
         username: '',
         firstName: '',
@@ -114,9 +115,30 @@ export default function ProfilePage() {
     };
 
     const handleSave = async () => {
-        if (isSavingRef.current) return;
-        isSavingRef.current = true;
+        // Prevent multiple simultaneous save operations
+        if (isSaving) return;
+        
         setIsSaving(true);
+        
+        // MOCK MODE: Simulate save
+        setTimeout(() => {
+            try {
+                setUser(prev => prev ? {
+                    ...prev,
+                    username: formData.username,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName
+                } : null);
+                setIsEditing(false);
+                setSaveSuccess(true);
+                setTimeout(() => setSaveSuccess(false), 3000);
+            } finally {
+                setIsSaving(false);
+            }
+        }, 500);
+
+        /* 
+        // REAL API CALL (Commented out for Mock)
         try {
             const token = localStorage.getItem('token');
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -156,7 +178,6 @@ export default function ProfilePage() {
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
         } finally {
-            isSavingRef.current = false;
             setIsSaving(false);
         }
     };
@@ -188,17 +209,21 @@ export default function ProfilePage() {
         }
     };
 
-    const getInitials = (user: User) => {
-        const firstName = user.firstName?.trim();
-        const lastName = user.lastName?.trim();
+    const getInitials = (user?: User | null) => {
+        const firstName = user?.firstName?.trim();
+        const lastName = user?.lastName?.trim();
 
         if (firstName && lastName) {
             return `${firstName[0]}${lastName[0]}`.toUpperCase();
         }
-        if (user.username) {
+        if (user?.username) {
             return user.username.substring(0, 2).toUpperCase();
         }
-        return user.email.substring(0, 2).toUpperCase();
+        const email = user?.email?.trim();
+        if (email) {
+            return email.substring(0, 2).toUpperCase();
+        }
+        return '??';
     };
 
     if (loading) {
@@ -369,13 +394,17 @@ export default function ProfilePage() {
                                         <button
                                             onClick={handleSave}
                                             disabled={isSaving}
-                                            className="flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                            className={`flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white transition-colors ${
+                                                isSaving 
+                                                    ? 'bg-blue-400 cursor-not-allowed' 
+                                                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                                            }`}
                                         >
                                             {isSaving ? (
                                                 <>
-                                                    <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                     </svg>
                                                     Enregistrement...
                                                 </>
@@ -390,7 +419,12 @@ export default function ProfilePage() {
                                         </button>
                                         <button
                                             onClick={handleEditToggle}
-                                            className="flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                                            disabled={isSaving}
+                                            className={`flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg transition-colors ${
+                                                isSaving
+                                                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                                    : 'text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+                                            }`}
                                         >
                                             Annuler
                                         </button>
