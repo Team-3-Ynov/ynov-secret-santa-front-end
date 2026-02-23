@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -32,6 +32,8 @@ export default function ProfilePage() {
         lastName: ''
     });
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -112,6 +114,9 @@ export default function ProfilePage() {
     };
 
     const handleSave = async () => {
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -150,6 +155,9 @@ export default function ProfilePage() {
             setTimeout(() => setSaveSuccess(false), 3000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
         }
     };
 
@@ -360,12 +368,25 @@ export default function ProfilePage() {
                                     <div className="pt-4 flex gap-3">
                                         <button
                                             onClick={handleSave}
-                                            className="flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                            disabled={isSaving}
+                                            className="flex-1 inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                         >
-                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Enregistrer
+                                            {isSaving ? (
+                                                <>
+                                                    <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                                    </svg>
+                                                    Enregistrement...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    Enregistrer
+                                                </>
+                                            )}
                                         </button>
                                         <button
                                             onClick={handleEditToggle}
