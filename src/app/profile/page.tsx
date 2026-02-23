@@ -18,19 +18,7 @@ interface User {
     };
 }
 
-const MOCK_USER: User = {
-    id: 'mock-id-123',
-    email: 'alice.wonder@example.com',
-    username: 'AliceInWonderland',
-    firstName: 'Alice',
-    lastName: 'Wonder',
-    createdAt: '2026-01-15T10:00:00Z',
-    stats: {
-        eventsCreated: 3,
-        participations: 5,
-        giftsOffered: 5
-    }
-};
+
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -48,25 +36,11 @@ export default function ProfilePage() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            // MOCK MODE: Simulating API call
-            setTimeout(() => {
-                setUser(MOCK_USER);
-                setFormData({
-                    username: MOCK_USER.username || '',
-                    firstName: MOCK_USER.firstName || '',
-                    lastName: MOCK_USER.lastName || ''
-                });
-                setLoading(false);
-            }, 800); // Small delay for realism
-
-            /* 
-            // REAL API CALL (Commented out for Mock)
             const token = localStorage.getItem('token');
 
             if (!token) {
-                // For mock purposes, we allow viewing without token or redirect
-                // router.push('/auth/login');
-                // return;
+                router.push('/auth/login');
+                return;
             }
 
             try {
@@ -79,13 +53,28 @@ export default function ProfilePage() {
 
                 if (!res.ok) {
                     if (res.status === 401) {
-                         // Session expired handling
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('refreshToken');
+                        router.push('/auth/login');
+                        return;
                     }
                     throw new Error('Erreur lors de la récupération du profil');
                 }
 
                 const result = await res.json();
-                const userData = result.data?.user || result.data || result;
+                const apiUser = result.data?.user || result.data;
+
+                // Map backend snake_case to frontend camelCase
+                const userData: User = {
+                    id: String(apiUser.id),
+                    email: apiUser.email,
+                    username: apiUser.username,
+                    firstName: apiUser.first_name,
+                    lastName: apiUser.last_name,
+                    createdAt: apiUser.created_at,
+                    stats: apiUser.stats
+                };
+
                 setUser(userData);
                 setFormData({
                     username: userData.username || '',
@@ -97,7 +86,6 @@ export default function ProfilePage() {
             } finally {
                 setLoading(false);
             }
-            */
         };
 
         fetchProfile();
@@ -152,22 +140,36 @@ export default function ProfilePage() {
         try {
             const token = localStorage.getItem('token');
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-            
+
             const res = await fetch(`${apiUrl}/api/users/${user?.id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    username: formData.username,
+                    first_name: formData.firstName,
+                    last_name: formData.lastName
+                })
             });
 
             if (!res.ok) {
-                throw new Error('Erreur lors de la mise à jour du profil');
+                const result = await res.json();
+                throw new Error(result.message || 'Erreur lors de la mise à jour du profil');
             }
 
             const result = await res.json();
-            setUser(result.data);
+            const apiUser = result.data;
+
+            const updatedUserData: User = {
+                ...user!,
+                username: apiUser.username,
+                firstName: apiUser.first_name,
+                lastName: apiUser.last_name,
+            };
+
+            setUser(updatedUserData);
             setIsEditing(false);
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 3000);
@@ -176,7 +178,6 @@ export default function ProfilePage() {
         } finally {
             setIsSaving(false);
         }
-        */
     };
 
     const handleLogout = async () => {
@@ -206,14 +207,21 @@ export default function ProfilePage() {
         }
     };
 
-    const getInitials = (user: User) => {
-        if (user.firstName && user.lastName) {
-            return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    const getInitials = (user?: User | null) => {
+        const firstName = user?.firstName?.trim();
+        const lastName = user?.lastName?.trim();
+
+        if (firstName && lastName) {
+            return `${firstName[0]}${lastName[0]}`.toUpperCase();
         }
-        if (user.username) {
+        if (user?.username) {
             return user.username.substring(0, 2).toUpperCase();
         }
-        return user.email.substring(0, 2).toUpperCase();
+        const email = user?.email?.trim();
+        if (email) {
+            return email.substring(0, 2).toUpperCase();
+        }
+        return '??';
     };
 
     if (loading) {
@@ -229,7 +237,7 @@ export default function ProfilePage() {
             <div className="max-w-4xl mx-auto space-y-8">
                 {/* Header Section */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="h-32 bg-linear-to-r from-red-600 to-red-800 relative">
+                    <div className="h-32 bg-gradient-to-r from-red-600 to-red-800 relative">
                         <div className="absolute -bottom-12 left-8">
                             <div className="h-24 w-24 rounded-full bg-white p-1 shadow-lg">
                                 <div className="h-full w-full rounded-full bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-600">
