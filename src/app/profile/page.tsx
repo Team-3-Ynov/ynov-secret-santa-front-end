@@ -34,6 +34,15 @@ export default function ProfilePage() {
     });
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, []);
     const isSavingRef = useRef(false);
 
     useEffect(() => {
@@ -102,12 +111,14 @@ export default function ProfilePage() {
                 lastName: user?.lastName || ''
             });
         }
+        setError('');
         setIsEditing(!isEditing);
         setSaveSuccess(false);
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        setError('');
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -143,20 +154,26 @@ export default function ProfilePage() {
             const token = localStorage.getItem('token');
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-            const res = await fetch(`${apiUrl}/api/users/${user?.id}`, {
+            const res = await fetch(`${apiUrl}/api/users/${user.id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    username: formData.username,
-                    first_name: formData.firstName,
-                    last_name: formData.lastName
+                    username: trimmedUsername,
+                    first_name: trimmedFirstName,
+                    last_name: trimmedLastName
                 })
             });
 
             if (!res.ok) {
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('refreshToken');
+                    router.push('/auth/login');
+                    return;
+                }
                 const result = await res.json();
                 throw new Error(result.message || 'Erreur lors de la mise à jour du profil');
             }
@@ -165,16 +182,20 @@ export default function ProfilePage() {
             const apiUser = result.data;
 
             const updatedUserData: User = {
-                ...user!,
+                ...user,
                 username: apiUser.username,
                 firstName: apiUser.first_name,
                 lastName: apiUser.last_name,
+                stats: user.stats,
             };
 
             setUser(updatedUserData);
             setIsEditing(false);
             setSaveSuccess(true);
-            setTimeout(() => setSaveSuccess(false), 3000);
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            saveTimeoutRef.current = setTimeout(() => setSaveSuccess(false), 3000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
         } finally {
@@ -243,7 +264,7 @@ export default function ProfilePage() {
                         <div className="absolute -bottom-12 left-8">
                             <div className="h-24 w-24 rounded-full bg-white p-1 shadow-lg">
                                 <div className="h-full w-full rounded-full bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-600">
-                                    {user && getInitials(user)}
+                                    {getInitials(user)}
                                 </div>
                             </div>
                         </div>
@@ -251,8 +272,10 @@ export default function ProfilePage() {
                     <div className="pt-16 pb-6 px-8 flex justify-between items-start">
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
-                                {user?.username || user?.firstName ? (
-                                    <span>{user.firstName} {user.lastName} <span className="text-gray-400 font-normal">(@{user.username})</span></span>
+                                {user?.firstName && user?.lastName ? (
+                                    <span>{user.firstName} {user.lastName}{user.username && <span className="text-gray-400 font-normal"> (@{user.username})</span>}</span>
+                                ) : user?.username ? (
+                                    <span>@{user.username}</span>
                                 ) : (
                                     user?.email
                                 )}
@@ -265,7 +288,7 @@ export default function ProfilePage() {
                             onClick={handleLogout}
                             className="inline-flex items-center px-4 py-2 border border-red-200 text-sm font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                         >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg aria-hidden="true" className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                             Déconnexion
@@ -289,14 +312,14 @@ export default function ProfilePage() {
                                 >
                                     {isEditing ? (
                                         <>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg aria-hidden="true" className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                                             </svg>
                                             Annuler
                                         </>
                                     ) : (
                                         <>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg aria-hidden="true" className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                             Modifier
@@ -308,7 +331,7 @@ export default function ProfilePage() {
                                 {saveSuccess && (
                                     <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
                                         <div className="flex">
-                                            <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg aria-hidden="true" className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
                                             <p className="ml-3 text-sm text-green-700 font-medium">Profil mis à jour avec succès !</p>
@@ -323,11 +346,12 @@ export default function ProfilePage() {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                                        <label htmlFor="username" className="block text-sm font-medium text-gray-500 mb-1">
                                             Nom d&apos;utilisateur
                                         </label>
                                         {isEditing ? (
                                             <input
+                                                id="username"
                                                 type="text"
                                                 name="username"
                                                 value={formData.username}
@@ -350,11 +374,12 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-500 mb-1">
                                             Prénom
                                         </label>
                                         {isEditing ? (
                                             <input
+                                                id="firstName"
                                                 type="text"
                                                 name="firstName"
                                                 value={formData.firstName}
@@ -369,11 +394,12 @@ export default function ProfilePage() {
                                         )}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-500 mb-1">
                                             Nom
                                         </label>
                                         {isEditing ? (
                                             <input
+                                                id="lastName"
                                                 type="text"
                                                 name="lastName"
                                                 value={formData.lastName}
@@ -482,7 +508,7 @@ export default function ProfilePage() {
                                         <span className="mr-3 text-lg">📅</span>
                                         Mes Événements
                                     </span>
-                                    <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg aria-hidden="true" className="w-5 h-5 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                     </svg>
                                 </Link>
@@ -494,7 +520,7 @@ export default function ProfilePage() {
                                         <span className="mr-3 text-lg">📬</span>
                                         Invitations
                                     </span>
-                                    <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg aria-hidden="true" className="w-5 h-5 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                     </svg>
                                 </Link>
@@ -506,7 +532,7 @@ export default function ProfilePage() {
                                         <span className="mr-3 text-lg">🎅</span>
                                         Créer un Secret Santa
                                     </span>
-                                    <svg className="w-5 h-5 text-red-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg aria-hidden="true" className="w-5 h-5 text-red-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                                     </svg>
                                 </Link>
