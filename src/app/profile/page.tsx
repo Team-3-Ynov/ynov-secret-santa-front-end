@@ -180,17 +180,21 @@ export default function ProfilePage() {
         }
     };
 
-    const getInitials = (user: User) => {
-        const firstName = user.firstName?.trim();
-        const lastName = user.lastName?.trim();
+    const getInitials = (user?: User | null) => {
+        const firstName = user?.firstName?.trim();
+        const lastName = user?.lastName?.trim();
 
         if (firstName && lastName) {
             return `${firstName[0]}${lastName[0]}`.toUpperCase();
         }
-        if (user.username) {
+        if (user?.username) {
             return user.username.substring(0, 2).toUpperCase();
         }
-        return user.email.substring(0, 2).toUpperCase();
+        const email = user?.email?.trim();
+        if (email) {
+            return email.substring(0, 2).toUpperCase();
+        }
+        return '??';
     };
 
     if (loading) {
