@@ -11,6 +11,8 @@ function SignupForm() {
   const redirectUrl = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,13 @@ function SignupForm() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, username }),
+        body: JSON.stringify({
+          email,
+          password,
+          username,
+          ...(firstName.trim() && { first_name: firstName.trim() }),
+          ...(lastName.trim() && { last_name: lastName.trim() }),
+        }),
       });
 
       const result = await response.json();
@@ -46,6 +54,8 @@ function SignupForm() {
       setSuccess('Account created successfully! Redirecting to login...');
       setEmail('');
       setUsername('');
+      setFirstName('');
+      setLastName('');
       setPassword('');
 
       // Redirect to login page, preserving the redirect URL
@@ -106,6 +116,38 @@ function SignupForm() {
               placeholder="jean_dupont"
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                Prénom <span className="text-gray-400 font-normal">(optionnel)</span>
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                placeholder="Jean"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                Nom <span className="text-gray-400 font-normal">(optionnel)</span>
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                placeholder="Dupont"
+              />
+            </div>
+          </div>
+
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-gray-700">
