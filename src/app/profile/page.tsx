@@ -116,7 +116,7 @@ export default function ProfilePage() {
             const token = localStorage.getItem('token');
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-            const res = await fetch(`${apiUrl}/api/users/${user?.id}`, {
+            const res = await fetch(`${apiUrl}/api/users/me`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -135,7 +135,7 @@ export default function ProfilePage() {
             }
 
             const result = await res.json();
-            const apiUser = result.data;
+            const apiUser = result.data.user;
 
             const updatedUserData: User = {
                 ...user!,
