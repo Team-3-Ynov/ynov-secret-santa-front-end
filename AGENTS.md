@@ -26,7 +26,7 @@
 | ----- | ----- |
 | **Product** | Ynov Secret Santa Frontend — user web app for auth and event flows |
 | **Phase** | v1 |
-| **Stack** | TypeScript · Next.js 16 App Router · React 19 · Tailwind CSS · Jest |
+| **Stack** | TypeScript · Next.js 16 App Router · React 19 · Tailwind CSS · Vitest |
 | **Monorepo** | Single package with pnpm/npm |
 | **Architecture** | Client-heavy web app with API integration |
 
