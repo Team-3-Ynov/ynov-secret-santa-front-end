@@ -33,9 +33,7 @@ export default function GlobalError({
         }}
       >
         <h2>Une erreur inattendue est survenue</h2>
-        <p style={{ color: "#666" }}>
-          L&apos;erreur a été signalée automatiquement.
-        </p>
+        <p style={{ color: "#666" }}>L&apos;erreur a été signalée automatiquement.</p>
         <button
           type="button"
           onClick={() => reset()}
