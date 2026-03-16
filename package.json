@@ -11,7 +11,8 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.43.0",
@@ -29,6 +30,7 @@
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.0",
     "oxlint": "^1.56.0",
     "postcss": "^8.5.6",
