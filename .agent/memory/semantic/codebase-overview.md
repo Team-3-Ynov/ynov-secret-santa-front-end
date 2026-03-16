@@ -4,7 +4,24 @@
 ## INDEX
 - [App Router Structure](#app-router-structure) - pages, route groups
 - [Shared Components](#shared-components) - navbar, dialogs, helpers
-- [Utilities And Tests](#utilities-and-tests) - validation, jest
+- [Utilities And Tests](#utilities-and-tests) - validation, vitest
+
+## Activation Matrix
+
+- Context: App Router Structure
+- Roles: `frontend-engineer.md`
+- Tier 1 Skills: `01-nextjs-typescript.md`, `02-ui-tailwind.md`
+- Core Rules: `.agent/system/alignment.md`, `.agent/system/orchestrator.md`
+
+- Context: Shared Components
+- Roles: `frontend-engineer.md`, `frontend-accessibility-reviewer.md`
+- Tier 1 Skills: `02-ui-tailwind.md`, `01-nextjs-typescript.md`
+- Core Rules: `.agent/system/alignment.md`, `.agent/rules/tier-0/11-agent-behavior.md`
+
+- Context: Utilities And Tests
+- Roles: `frontend-engineer.md`
+- Tier 1 Skills: `06-testing.md`, `01-nextjs-typescript.md`
+- Core Rules: `.agent/system/alignment.md`, `.agent/system/auto-learning.md`
 
 ## <section id="app-router-structure"> App Router Structure
 
