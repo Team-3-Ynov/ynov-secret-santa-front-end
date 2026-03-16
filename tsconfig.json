@@ -31,7 +31,11 @@
     "resolveJsonModule": true,
     "removeComments": true,
     "jsx": "react-jsx",
-    "incremental": true
+    "incremental": true,
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
   },
   "include": [
     "next-env.d.ts",
