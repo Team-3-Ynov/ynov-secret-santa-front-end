@@ -113,8 +113,10 @@ Active roles for this repository:
 
 - `frontend-engineer.md`
 - `frontend-accessibility-reviewer.md`
+- `frontend-unit-test-engineer.md`
 
 Use both roles for forms, authentication UX, navigation and route guards.
+Use `frontend-unit-test-engineer.md` for unit tests, regressions and component test strategy.
 
 ## 🧭 Task Detection Table
 
