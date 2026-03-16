@@ -14,12 +14,12 @@ services:
       - "3001:3001"
     environment:
       - PORT=3001
-    # Note: Depends on Nginx/Backend but those are defined in another file. 
-    # Docker Compose include merges them so it should resolve if loaded together, 
+    # Note: Depends on Nginx/Backend but those are defined in another file.
+    # Docker Compose include merges them so it should resolve if loaded together,
     # or we remove the strict dependency check here if it causes issues isolated.
     # For now, we assume they are run together.
     # depends_on:
-    #   - nginx 
+    #   - nginx
     restart: unless-stopped
     networks:
       - frontend-backend
