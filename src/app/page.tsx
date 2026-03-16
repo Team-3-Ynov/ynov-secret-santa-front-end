@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import Link from "next/link";
+import { useEffect, useState, useTransition } from "react";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     startTransition(() => {
       setIsLoggedIn(!!token);
     });
@@ -26,8 +26,8 @@ export default function Home() {
               <span className="text-gray-900"> en toute simplicité</span>
             </h1>
             <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-600">
-              Créez des événements, invitez vos amis, collègues ou famille, et laissez la magie de Noël opérer !
-              Notre plateforme gère le tirage au sort pour vous. 🎄
+              Créez des événements, invitez vos amis, collègues ou famille, et laissez la magie de
+              Noël opérer ! Notre plateforme gère le tirage au sort pour vous. 🎄
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               {isLoggedIn ? (
@@ -77,7 +77,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900">Comment ça marche ?</h2>
-            <p className="mt-4 text-lg text-gray-600">Trois étapes simples pour organiser votre Secret Santa</p>
+            <p className="mt-4 text-lg text-gray-600">
+              Trois étapes simples pour organiser votre Secret Santa
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -88,7 +90,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Créez votre événement</h3>
               <p className="text-gray-600">
-                Définissez le nom, la date et le budget maximum pour les cadeaux de votre Secret Santa.
+                Définissez le nom, la date et le budget maximum pour les cadeaux de votre Secret
+                Santa.
               </p>
             </div>
 
@@ -99,7 +102,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Invitez les participants</h3>
               <p className="text-gray-600">
-                Partagez le lien d&apos;invitation avec vos amis, collègues ou membres de votre famille.
+                Partagez le lien d&apos;invitation avec vos amis, collègues ou membres de votre
+                famille.
               </p>
             </div>
 
@@ -110,7 +114,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Lancez le tirage !</h3>
               <p className="text-gray-600">
-                Notre système effectue le tirage au sort et chaque participant découvre qui il doit gâter.
+                Notre système effectue le tirage au sort et chaque participant découvre qui il doit
+                gâter.
               </p>
             </div>
           </div>

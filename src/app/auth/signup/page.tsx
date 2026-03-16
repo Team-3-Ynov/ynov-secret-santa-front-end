@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useState, Suspense } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import PasswordRequirements from '@/components/PasswordRequirements';
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import PasswordRequirements from "@/components/PasswordRequirements";
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [password, setPassword] = useState('');
+  const redirectUrl = searchParams.get("redirect");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -26,8 +26,8 @@ function SignupForm() {
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
           password,
@@ -40,34 +40,38 @@ function SignupForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        let errorMessage = 'An unknown error occurred.';
+        let errorMessage = "An unknown error occurred.";
         if (result.errors && Array.isArray(result.errors)) {
-          errorMessage = result.errors.map((e: { field: string; message: string }) => `${e.field}: ${e.message}`).join(', ');
+          errorMessage = result.errors
+            .map((e: { field: string; message: string }) => `${e.field}: ${e.message}`)
+            .join(", ");
         } else if (Array.isArray(result.message)) {
-          errorMessage = result.message.join(', ');
+          errorMessage = result.message.join(", ");
         } else if (result.message) {
           errorMessage = result.message;
         }
         throw new Error(errorMessage);
       }
 
-      setSuccess('Account created successfully! Redirecting to login...');
-      setEmail('');
-      setUsername('');
-      setFirstName('');
-      setLastName('');
-      setPassword('');
+      setSuccess("Account created successfully! Redirecting to login...");
+      setEmail("");
+      setUsername("");
+      setFirstName("");
+      setLastName("");
+      setPassword("");
 
       // Redirect to login page, preserving the redirect URL
       setTimeout(() => {
-        const loginUrl = redirectUrl ? `/auth/login?redirect=${encodeURIComponent(redirectUrl)}` : '/auth/login';
+        const loginUrl = redirectUrl
+          ? `/auth/login?redirect=${encodeURIComponent(redirectUrl)}`
+          : "/auth/login";
         router.push(loginUrl);
       }, 1500);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('An unknown error occurred.');
+        setError("An unknown error occurred.");
       }
     } finally {
       setIsLoading(false);
@@ -82,8 +86,16 @@ function SignupForm() {
           <p className="mt-2 text-gray-600">Rejoignez l&apos;aventure Secret Santa !</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {success && <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">{success}</div>}
-          {error && <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">{error}</div>}
+          {success && (
+            <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">
+              {success}
+            </div>
+          )}
+          {error && (
+            <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-gray-700">
@@ -148,7 +160,6 @@ function SignupForm() {
             </div>
           </div>
 
-
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-gray-700">
               Mot de passe
@@ -171,12 +182,12 @@ function SignupForm() {
             disabled={isLoading}
             className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Création en cours...' : 'Créer mon compte'}
+            {isLoading ? "Création en cours..." : "Créer mon compte"}
           </button>
         </form>
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Déjà un compte ?{' '}
+            Déjà un compte ?{" "}
             <Link href="/auth/login" className="font-medium text-red-600 hover:underline">
               Se connecter
             </Link>
@@ -189,7 +200,13 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans">
+          Loading...
+        </div>
+      }
+    >
       <SignupForm />
     </Suspense>
   );

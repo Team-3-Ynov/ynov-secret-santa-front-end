@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function CreateSecretSantaPage() {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [eventDate, setEventDate] = useState('');
-  const [budget, setBudget] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [budget, setBudget] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export default function CreateSecretSantaPage() {
       budget?: number;
     } = {
       title,
-      eventDate: eventDate ? new Date(eventDate).toISOString() : '',
+      eventDate: eventDate ? new Date(eventDate).toISOString() : "",
     };
 
     // Only add optional fields if they have values
@@ -38,26 +38,27 @@ export default function CreateSecretSantaPage() {
       eventData.budget = Number(budget);
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      setError('Vous devez être connecté pour créer un événement.');
-      router.push('/auth/login');
+      setError("Vous devez être connecté pour créer un événement.");
+      router.push("/auth/login");
       return;
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
       const response = await fetch(`${apiUrl}/api/events`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(eventData),
       });
 
       const responseText = await response.text();
+      // biome-ignore lint/suspicious/noImplicitAnyLet: JSON.parse returns any
       let result;
       try {
         result = JSON.parse(responseText);
@@ -67,18 +68,19 @@ export default function CreateSecretSantaPage() {
       }
 
       if (!response.ok) {
-        const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'Une erreur inconnue est survenue.';
+        const errorMessage = Array.isArray(result.message)
+          ? result.message.join(", ")
+          : result.message || "Une erreur inconnue est survenue.";
         setError(errorMessage);
       } else {
         // Redirect to my events page after successful creation
-        router.push('/events');
+        router.push("/events");
       }
-
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Une erreur inconnue est survenue.');
+        setError("Une erreur inconnue est survenue.");
       }
     } finally {
       setIsLoading(false);
@@ -93,8 +95,16 @@ export default function CreateSecretSantaPage() {
           <p className="mt-2 text-gray-600">Que la magie de Noël commence !</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {success && <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">{success}</div>}
-          {error && <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">{error}</div>}
+          {success && (
+            <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">
+              {success}
+            </div>
+          )}
+          {error && (
+            <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium text-gray-700">
@@ -164,7 +174,7 @@ export default function CreateSecretSantaPage() {
             disabled={isLoading}
             className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Création en cours...' : 'Créer l\'événement'}
+            {isLoading ? "Création en cours..." : "Créer l'événement"}
           </button>
         </form>
       </div>
