@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import InviteDialog from '@/components/InviteDialog';
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import InviteDialog from "@/components/InviteDialog";
 
 export default function EditSecretSantaPage() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [eventDate, setEventDate] = useState('');
-  const [budget, setBudget] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [budget, setBudget] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,42 +25,42 @@ export default function EditSecretSantaPage() {
     const fetchEventData = async () => {
       setIsFetching(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          router.push('/auth/login');
+          router.push("/auth/login");
           return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
         const response = await fetch(`${apiUrl}/api/events/${id}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error('Événement non trouvé.');
+            throw new Error("Événement non trouvé.");
           }
-          throw new Error('Erreur lors de la récupération des données.');
+          throw new Error("Erreur lors de la récupération des données.");
         }
 
         const result = await response.json();
         const data = result.data || result;
 
-        setTitle(data.title || '');
-        setDescription(data.description || '');
+        setTitle(data.title || "");
+        setDescription(data.description || "");
         // Handle date format (could be ISO string)
         if (data.eventDate) {
-          const dateStr = data.eventDate.split('T')[0];
+          const dateStr = data.eventDate.split("T")[0];
           setEventDate(dateStr);
         }
-        setBudget(data.budget?.toString() || '');
+        setBudget(data.budget?.toString() || "");
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError('Une erreur inconnue est survenue.');
+          setError("Une erreur inconnue est survenue.");
         }
       } finally {
         setIsFetching(false);
@@ -90,24 +90,25 @@ export default function EditSecretSantaPage() {
     if (budget) eventData.budget = Number(budget);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        setError('Vous devez être connecté pour modifier un événement.');
-        router.push('/auth/login');
+        setError("Vous devez être connecté pour modifier un événement.");
+        router.push("/auth/login");
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       const response = await fetch(`${apiUrl}/api/events/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(eventData),
       });
 
       const responseText = await response.text();
+      // biome-ignore lint/suspicious/noImplicitAnyLet: JSON.parse returns any
       let result;
       try {
         result = JSON.parse(responseText);
@@ -117,16 +118,18 @@ export default function EditSecretSantaPage() {
       }
 
       if (!response.ok) {
-        const errorMessage = Array.isArray(result.message) ? result.message.join(', ') : result.message || 'Une erreur inconnue est survenue.';
+        const errorMessage = Array.isArray(result.message)
+          ? result.message.join(", ")
+          : result.message || "Une erreur inconnue est survenue.";
         setError(errorMessage);
       } else {
-        setSuccess('Événement mis à jour avec succès !');
+        setSuccess("Événement mis à jour avec succès !");
       }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Une erreur inconnue est survenue.');
+        setError("Une erreur inconnue est survenue.");
       }
     } finally {
       setIsLoading(false);
@@ -134,7 +137,9 @@ export default function EditSecretSantaPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')) {
+    if (
+      !confirm("Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.")
+    ) {
       return;
     }
 
@@ -142,31 +147,31 @@ export default function EditSecretSantaPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        router.push('/auth/login');
+        router.push("/auth/login");
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       const response = await fetch(`${apiUrl}/api/events/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
-        throw new Error(result.message || 'Erreur lors de la suppression.');
+        throw new Error(result.message || "Erreur lors de la suppression.");
       }
 
-      router.push('/events');
+      router.push("/events");
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Une erreur inconnue est survenue.');
+        setError("Une erreur inconnue est survenue.");
       }
     } finally {
       setIsLoading(false);
@@ -208,8 +213,16 @@ export default function EditSecretSantaPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {success && <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">{success}</div>}
-          {error && <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">{error}</div>}
+          {success && (
+            <div className="p-4 text-green-800 bg-green-100 border border-green-200 rounded-md">
+              {success}
+            </div>
+          )}
+          {error && (
+            <div className="p-4 text-red-800 bg-red-100 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium text-gray-700">
@@ -276,7 +289,7 @@ export default function EditSecretSantaPage() {
             disabled={isLoading}
             className="w-full py-3 px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            {isLoading ? "Enregistrement..." : "Enregistrer les modifications"}
           </button>
         </form>
       </div>
