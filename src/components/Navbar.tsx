@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -65,6 +66,7 @@ export default function Navbar() {
                     <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
                         {isLoggedIn ? (
                             <>
+                                <NotificationBell />
                                 <Link
                                     href="/profile"
                                     className={`text-sm font-medium ${isActive('/profile')}`}
