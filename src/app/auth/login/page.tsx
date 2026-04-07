@@ -2,16 +2,26 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const [email, setEmail] = useState("");
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.replace(redirectUrl || "/events");
+      return;
+    }
+    setIsAuthChecking(false);
+  }, [router, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +53,7 @@ function LoginForm() {
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
+      globalThis.dispatchEvent(new Event("auth-changed"));
 
       // Redirect to the specified URL or default to events page
       router.push(redirectUrl || "/events");
@@ -56,6 +67,14 @@ function LoginForm() {
       setIsLoading(false);
     }
   };
+
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans">

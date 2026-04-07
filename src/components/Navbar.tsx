@@ -13,14 +13,18 @@ export default function Navbar() {
   useEffect(() => {
     const syncAuthState = () => {
       const token = localStorage.getItem("token");
-      setIsLoggedIn(!!token);
+      startTransition(() => {
+        setIsLoggedIn(!!token);
+      });
     };
 
     syncAuthState();
-    window.addEventListener("storage", syncAuthState);
+    globalThis.addEventListener("storage", syncAuthState);
+    globalThis.addEventListener("auth-changed", syncAuthState as EventListener);
 
     return () => {
-      window.removeEventListener("storage", syncAuthState);
+      globalThis.removeEventListener("storage", syncAuthState);
+      globalThis.removeEventListener("auth-changed", syncAuthState as EventListener);
     };
   }, []);
 
@@ -28,6 +32,7 @@ export default function Navbar() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
+    globalThis.dispatchEvent(new Event("auth-changed"));
     router.push("/");
   };
 

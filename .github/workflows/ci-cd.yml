@@ -48,6 +48,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 🔍 Security audit
+        if: github.event_name == 'push'
         run: pnpm audit --audit-level=high
 
       - name: 🧹 Lint code
@@ -61,7 +62,7 @@ jobs:
 
       - name: 📊 Upload coverage report
         uses: codecov/codecov-action@v4
-        if: always()
+        if: github.event_name == 'push'
         with:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
