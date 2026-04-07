@@ -5,15 +5,15 @@ export interface NotificationMetadata {
   invitationId?: string;
   token?: string;
   invitationToken?: string;
-  invitationStatus?: "pending" | "accepted" | "declined" | string;
-  status?: "pending" | "accepted" | "declined" | string;
+  invitationStatus?: "pending" | "accepted" | "declined" | (string & {});
+  status?: "pending" | "accepted" | "declined" | (string & {});
   respondedAt?: string;
   isResponded?: boolean;
   invitedEmail?: string;
   receiverUsername?: string;
 }
 
-export type NotificationType = "draw_result" | "invitation" | "generic" | string;
+export type NotificationType = "draw_result" | "invitation" | "generic" | (string & {});
 
 export interface NotificationItem {
   id: string;
