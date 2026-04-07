@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { NOTIFICATIONS_REFRESH_EVENT } from "@/utils/notifications";
 
 export default function JoinEventPage() {
   const { id } = useParams();
@@ -69,6 +70,8 @@ export default function JoinEventPage() {
       const alreadyJoined = typeof message === "string" && message.includes("déjà rejoint");
 
       setSuccess(message);
+      globalThis.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
+
       if (alreadyJoined) {
         router.push(`/events/${id}`);
         return;

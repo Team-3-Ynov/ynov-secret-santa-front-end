@@ -21,6 +21,10 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("@/components/NotificationBell", () => ({
+  default: () => <div data-testid="notification-bell">Notification bell</div>,
+}));
+
 describe("Navbar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,6 +51,7 @@ describe("Navbar", () => {
     await waitFor(() => {
       expect(screen.getByText("Déconnexion")).toBeInTheDocument();
     });
+    expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
     expect(screen.getByText("Mes Évènements")).toBeInTheDocument();
     expect(screen.getByText("👤 Profil")).toBeInTheDocument();
   });

@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { startTransition, useEffect, useState } from "react";
 import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [, startTransition] = useTransition();
 
   useEffect(() => {
     const syncAuthState = () => {

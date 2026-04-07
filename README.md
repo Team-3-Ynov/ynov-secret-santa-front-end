@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ynov Secret Santa - Frontend
 
-## Getting Started
+Frontend web de Ynov Secret Santa construit avec Next.js App Router.
 
-First, run the development server:
+## Stack technique
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript strict
+- Tailwind CSS
+- Vitest + Testing Library
+- Biome + Oxlint
+
+## Prerequis
+
+- Node.js 20+
+- npm (ou pnpm, selon votre usage)
+
+## Configuration locale
+
+Creer un fichier `.env.local` a la racine avec au minimum:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+Le frontend tourne sur `http://localhost:3000`.
+
+## Lancer le projet
+
+```bash
+npm install
+npm run dev
+```
+
+## Scripts utiles
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
+npm run lint
+npm run lint:fix
+npm run format
+npm run typecheck
+npm run test
+npm run test:watch
+npm run test:coverage
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Fonctionnalites principales
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Authentification: inscription, connexion, deconnexion
+- Gestion des evenements Secret Santa (creation, edition, invitations)
+- Page dediee aux invitations recues
+- Notifications in-app (cloche navbar):
+  - badge non lu (polling)
+  - liste des notifications
+  - marquer une notification comme lue
+  - marquer toutes les notifications comme lues
+  - redirection vers l'evenement ou l'invitation associee
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Structure (resume)
 
-## Learn More
+```text
+src/app/
+  auth/login, auth/signup
+  events/, events/[id], events/[id]/join
+  invitations/
+  profile/
+  secretsanta/create, secretsanta/edit/[id]
+src/components/
+  Navbar.tsx
+  NotificationBell.tsx
+  InviteDialog.tsx
+  PasswordRequirements.tsx
+src/utils/
+  notifications.ts
+  validation.ts
+tests/
+  app/, components/, utils/
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Qualite et verification
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Avant merge, verifier au minimum:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run typecheck
+npm run test
+```
 
-## Deploy on Vercel
+## Notes API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Base API attendue: `${NEXT_PUBLIC_API_URL}/api`
+- Les routes protegees utilisent un JWT Bearer stocke dans le navigateur.
