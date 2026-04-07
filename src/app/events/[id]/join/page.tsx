@@ -20,9 +20,9 @@ export default function JoinEventPage() {
 
   // Construire l'URL de redirection avec le token d'invitation
   const redirectUrl = inviteToken
-    ? `/events/${id}/join?token=${inviteToken}`
+    ? `/events/${id}/join?token=${encodeURIComponent(inviteToken)}`
     : invitationId
-      ? `/events/${id}/join?invitationId=${invitationId}`
+      ? `/events/${id}/join?invitationId=${encodeURIComponent(invitationId)}`
       : `/events/${id}/join`;
 
   useEffect(() => {
