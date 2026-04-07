@@ -34,11 +34,12 @@ export default function InvitationsPage() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
+    const relativeTimeFormatter = new Intl.RelativeTimeFormat("fr", { numeric: "always" });
 
     if (diffMins < 1) return "À l'instant";
-    if (diffMins < 60) return `Il y a ${diffMins} min`;
-    if (diffHours < 24) return `Il y a ${diffHours}h`;
-    if (diffDays < 7) return `Il y a ${diffDays}j`;
+    if (diffMins < 60) return relativeTimeFormatter.format(-diffMins, "minute");
+    if (diffHours < 24) return relativeTimeFormatter.format(-diffHours, "hour");
+    if (diffDays < 7) return relativeTimeFormatter.format(-diffDays, "day");
     return date.toLocaleDateString("fr-FR");
   };
 
