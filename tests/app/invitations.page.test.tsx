@@ -72,9 +72,9 @@ describe("Invitations page", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Invitations en attente de réponse")).toBeInTheDocument();
+      expect(screen.getByText("Invitation - Mon Event")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Invitation - Mon Event")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Répondre à l'invitation" })).toHaveAttribute(
       "href",
       "/events/event-1/join?invitationId=inv-1"
