@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { NOTIFICATIONS_REFRESH_EVENT } from "@/utils/notifications";
 
 export default function JoinEventPage() {
   const { id } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("token"); // Token d'invitation depuis l'URL
+  const invitationId = searchParams.get("invitationId");
+  const inviteKey = inviteToken ?? invitationId;
 
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
@@ -18,7 +21,9 @@ export default function JoinEventPage() {
   // Construire l'URL de redirection avec le token d'invitation
   const redirectUrl = inviteToken
     ? `/events/${id}/join?token=${inviteToken}`
-    : `/events/${id}/join`;
+    : invitationId
+      ? `/events/${id}/join?invitationId=${invitationId}`
+      : `/events/${id}/join`;
 
   useEffect(() => {
     const authToken = localStorage.getItem("token");
@@ -33,7 +38,7 @@ export default function JoinEventPage() {
       return;
     }
 
-    if (!inviteToken) {
+    if (!inviteKey) {
       setError("Token d'invitation manquant. Veuillez utiliser le lien d'invitation complet.");
       return;
     }
@@ -49,7 +54,7 @@ export default function JoinEventPage() {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ token: inviteToken }),
+        body: JSON.stringify({ token: inviteKey }),
       });
 
       const data = await res.json();
@@ -67,6 +72,8 @@ export default function JoinEventPage() {
       }
 
       setSuccess("Vous avez rejoint l'évènement avec succès !");
+      globalThis.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
+
       // Redirect to event page after 2 seconds
       setTimeout(() => {
         router.push(`/events/${id}`);

@@ -1,159 +1,71 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  getInvitationJoinPath,
+  NOTIFICATIONS_REFRESH_EVENT,
+  type NotificationItem,
+  type NotificationsResponse,
+  type NotificationType,
+  shouldDisplayNotification,
+} from "@/utils/notifications";
 
-interface NotificationMetadata {
-  eventId?: string;
-  receiverUsername?: string;
+interface UnreadCountResponse {
+  success: boolean;
+  unreadCount?: number;
 }
 
-interface Notification {
-  id: string;
-  user_id: number;
-  type: string;
-  title: string;
-  message: string;
-  is_read: boolean;
-  metadata: NotificationMetadata;
-  created_at: string;
-  updated_at: string;
-}
+const POLLING_INTERVAL_MS = 30000;
 
 export default function NotificationBell() {
   const router = useRouter();
+  const panelId = useId();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const [unreadCount, setUnreadCount] = useState(0);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-  // Fetch unread count (pour le badge)
-  const fetchUnreadCount = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const res = await fetch(`${apiUrl}/api/notifications/unread-count`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération du nombre de notifications:", error);
-    }
-  }, [apiUrl]);
-
-  // Fetch all notifications (quand on ouvre le dropdown)
-  const fetchNotifications = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch(`${apiUrl}/api/notifications`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.data || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération des notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Marquer une notification comme lue
-  const markAsRead = async (notificationId: string) => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      await fetch(`${apiUrl}/api/notifications/${notificationId}/read`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Mettre à jour localement
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error("Erreur lors du marquage de la notification:", error);
-    }
-  };
-
-  // Marquer toutes les notifications comme lues
-  const markAllAsRead = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      await fetch(`${apiUrl}/api/notifications/read-all`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Mettre à jour localement
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Erreur lors du marquage des notifications:", error);
-    }
-  };
-
-  // Gérer le clic sur une notification
-  const handleNotificationClick = async (notification: Notification) => {
-    // Marquer comme lue si non lue
-    if (!notification.is_read) {
-      await markAsRead(notification.id);
-    }
-
-    // Fermer le dropdown
+  const clearAuthState = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    setUnreadCount(0);
+    setNotifications([]);
     setIsOpen(false);
-
-    // Rediriger vers l'événement si disponible
-    if (notification.metadata?.eventId) {
-      router.push(`/events/${notification.metadata.eventId}`);
-    }
-  };
-
-  // Toggle du dropdown
-  const handleBellClick = () => {
-    if (!isOpen) {
-      fetchNotifications();
-    }
-    setIsOpen(!isOpen);
-  };
-
-  // Fermer le dropdown en cliquant à l'extérieur
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Polling pour le badge (toutes les 30 secondes)
-  useEffect(() => {
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [fetchUnreadCount]);
+  const getAuthToken = useCallback(() => localStorage.getItem("token"), []);
 
-  // Formater la date relative
+  const getNotificationTarget = (notification: NotificationItem) => {
+    if (notification.type === "invitation") {
+      return getInvitationJoinPath(notification);
+    }
+
+    if (notification.metadata?.eventId) {
+      return `/events/${notification.metadata.eventId}`;
+    }
+
+    return null;
+  };
+
+  const getNotificationIcon = (type: NotificationType) => {
+    if (type === "draw_result") {
+      return "🎅";
+    }
+
+    if (type === "invitation") {
+      return "📬";
+    }
+
+    return "🔔";
+  };
+
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -169,17 +81,222 @@ export default function NotificationBell() {
     return date.toLocaleDateString("fr-FR");
   };
 
+  const fetchUnreadCount = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setUnreadCount(0);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiUrl}/api/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        clearAuthState();
+        return;
+      }
+
+      if (!res.ok) {
+        return;
+      }
+
+      const data: UnreadCountResponse = await res.json();
+      setUnreadCount(data.unreadCount ?? 0);
+    } catch (error) {
+      console.error("Erreur lors de la récupération du nombre de notifications:", error);
+    }
+  }, [apiUrl, clearAuthState, getAuthToken]);
+
+  const fetchNotifications = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch(`${apiUrl}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        clearAuthState();
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error("Impossible de charger les notifications.");
+      }
+
+      const data: NotificationsResponse = await res.json();
+      setNotifications(Array.isArray(data.data) ? data.data : []);
+      setUnreadCount(data.unreadCount ?? 0);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des notifications:", error);
+      setErrorMessage("Impossible de charger les notifications pour le moment.");
+    } finally {
+      setLoading(false);
+    }
+  }, [apiUrl, clearAuthState, getAuthToken]);
+
+  const markAsRead = useCallback(
+    async (notification: NotificationItem) => {
+      const token = getAuthToken();
+      if (!token || notification.is_read) {
+        return false;
+      }
+
+      try {
+        const res = await fetch(`${apiUrl}/api/notifications/${notification.id}/read`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.status === 401) {
+          clearAuthState();
+          return false;
+        }
+
+        if (!res.ok) {
+          throw new Error("Impossible de marquer la notification comme lue.");
+        }
+
+        setNotifications((prev) =>
+          prev.map((item) => (item.id === notification.id ? { ...item, is_read: true } : item))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+
+        return true;
+      } catch (error) {
+        console.error("Erreur lors du marquage de la notification:", error);
+        setErrorMessage("La notification n'a pas pu être marquée comme lue.");
+        return false;
+      }
+    },
+    [apiUrl, clearAuthState, getAuthToken]
+  );
+
+  const markAllAsRead = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token || unreadCount === 0) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiUrl}/api/notifications/read-all`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        clearAuthState();
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error("Impossible de marquer les notifications comme lues.");
+      }
+
+      setNotifications((prev) => prev.map((notification) => ({ ...notification, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Erreur lors du marquage des notifications:", error);
+      setErrorMessage("Le marquage global a échoué. Réessayez plus tard.");
+    }
+  }, [apiUrl, clearAuthState, getAuthToken, unreadCount]);
+
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    if (!notification.is_read) {
+      await markAsRead(notification);
+    }
+
+    setIsOpen(false);
+
+    const target = getNotificationTarget(notification);
+    if (target) {
+      router.push(target);
+    }
+  };
+
+  const handleBellClick = () => {
+    if (!isOpen) {
+      void fetchNotifications();
+    }
+
+    setIsOpen((prev) => !prev);
+  };
+
+  const visibleNotifications = notifications.filter(shouldDisplayNotification);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    void fetchUnreadCount();
+
+    const interval = window.setInterval(() => {
+      void fetchUnreadCount();
+    }, POLLING_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [fetchUnreadCount]);
+
+  useEffect(() => {
+    const handleNotificationsRefresh = () => {
+      void fetchUnreadCount();
+
+      if (isOpen) {
+        void fetchNotifications();
+      }
+    };
+
+    window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, handleNotificationsRefresh);
+    return () =>
+      window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, handleNotificationsRefresh);
+  }, [fetchNotifications, fetchUnreadCount, isOpen]);
+
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bouton cloche */}
       <button
         type="button"
         onClick={handleBellClick}
-        className="relative p-2 text-gray-600 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 rounded-full"
+        className="relative rounded-full p-2 text-gray-600 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
         aria-label="Notifications"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        aria-haspopup="dialog"
       >
         <svg
-          className="w-6 h-6"
+          className="h-6 w-6"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -194,81 +311,116 @@ export default function NotificationBell() {
           />
         </svg>
 
-        {/* Badge avec le nombre de notifications non lues */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform bg-red-600 rounded-full">
+          <span className="absolute -right-1 -top-1 inline-flex items-center justify-center rounded-full bg-red-600 px-2 py-1 text-xs font-bold leading-none text-white">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown des notifications */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 z-50 max-h-96 overflow-hidden">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+        <div
+          id={panelId}
+          role="dialog"
+          aria-label="Panneau des notifications"
+          className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 sm:w-96"
+        >
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
             <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 type="button"
-                onClick={markAllAsRead}
-                className="text-xs text-red-600 hover:text-red-800 font-medium"
+                onClick={() => void markAllAsRead()}
+                className="text-xs font-medium text-red-600 hover:text-red-800"
               >
                 Tout marquer comme lu
               </button>
             )}
           </div>
 
-          {/* Liste des notifications */}
-          <div className="overflow-y-auto max-h-72">
+          <div className="max-h-72 overflow-y-auto">
+            {errorMessage && (
+              <div className="px-4 pt-3" role="status" aria-live="polite">
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{errorMessage}</span>
+                    <button
+                      type="button"
+                      onClick={() => void fetchNotifications()}
+                      className="shrink-0 font-medium underline hover:no-underline"
+                    >
+                      Réessayer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="px-4 py-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-red-600"></div>
                 <p className="mt-2 text-sm text-gray-500">Chargement...</p>
               </div>
-            ) : notifications.length === 0 ? (
+            ) : visibleNotifications.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <span className="text-4xl">🔔</span>
                 <p className="mt-2 text-sm text-gray-500">Aucune notification</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {notifications.map((notification) => (
-                  <button
-                    type="button"
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                      !notification.is_read ? "bg-red-50" : ""
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <span className="text-2xl">
-                          {notification.type === "draw_result" ? "🎅" : "🔔"}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-sm font-medium ${
-                            !notification.is_read ? "text-gray-900" : "text-gray-600"
-                          }`}
-                        >
-                          {notification.title}
-                        </p>
-                        <p className="text-sm text-gray-500 truncate">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {formatRelativeTime(notification.created_at)}
-                        </p>
-                      </div>
-                      {!notification.is_read && (
+                {visibleNotifications.map((notification) => {
+                  const target = getNotificationTarget(notification);
+
+                  return (
+                    <button
+                      type="button"
+                      key={notification.id}
+                      onClick={() => void handleNotificationClick(notification)}
+                      className={`w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
+                        !notification.is_read ? "bg-red-50" : ""
+                      }`}
+                      aria-label={`Ouvrir la notification ${notification.title}`}
+                    >
+                      <div className="flex items-start space-x-3">
                         <div className="flex-shrink-0">
-                          <span className="inline-block w-2 h-2 bg-red-600 rounded-full"></span>
+                          <span className="text-2xl">{getNotificationIcon(notification.type)}</span>
                         </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
+
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={`text-sm font-medium ${
+                              !notification.is_read ? "text-gray-900" : "text-gray-600"
+                            }`}
+                          >
+                            {notification.title}
+                          </p>
+                          <p className="text-sm text-gray-500">{notification.message}</p>
+
+                          {target && (
+                            <p className="mt-2 text-xs font-medium text-red-600">
+                              {notification.type === "invitation"
+                                ? "Voir l'invitation"
+                                : "Voir l'évènement"}
+                            </p>
+                          )}
+
+                          <p className="mt-1 text-xs text-gray-400">
+                            {formatRelativeTime(notification.created_at)}
+                          </p>
+                        </div>
+
+                        {!notification.is_read && (
+                          <div className="flex-shrink-0">
+                            <span
+                              className="inline-block h-2 w-2 rounded-full bg-red-600"
+                              aria-hidden="true"
+                            ></span>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

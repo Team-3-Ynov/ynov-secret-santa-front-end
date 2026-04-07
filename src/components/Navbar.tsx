@@ -2,22 +2,33 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [, startTransition] = useTransition();
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
+    void pathname;
     const token = localStorage.getItem("token");
-    startTransition(() => {
+    setIsLoggedIn(!!token);
+  }, [pathname]);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      const token = localStorage.getItem("token");
       setIsLoggedIn(!!token);
-    });
-  }, []); // Re-vérifier à chaque changement de page
+    };
+
+    syncAuthState();
+    window.addEventListener("storage", syncAuthState);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

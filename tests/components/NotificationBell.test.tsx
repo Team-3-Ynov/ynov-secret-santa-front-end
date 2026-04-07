@@ -154,6 +154,194 @@ describe("NotificationBell", () => {
     });
   });
 
+  it("redirects invitation notifications to invitations when no event is provided", async () => {
+    localStorage.setItem("token", "jwt");
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ unreadCount: 1 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: "notif-invite",
+              user_id: 1,
+              type: "invitation",
+              title: "Invitation à rejoindre l'évènement",
+              message: "Vous avez reçu une invitation.",
+              is_read: false,
+              metadata: { invitationId: "invite-1" },
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+          unreadCount: 1,
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) });
+
+    render(<NotificationBell />);
+
+    fireEvent.click(screen.getByLabelText("Notifications"));
+
+    const row = await screen.findByText("Invitation à rejoindre l'évènement");
+    fireEvent.click(row);
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/invitations");
+    });
+  });
+
+  it("redirects invitation notifications to join page when event id is provided", async () => {
+    localStorage.setItem("token", "jwt");
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ unreadCount: 1 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: "notif-invite-join",
+              user_id: 1,
+              type: "invitation",
+              title: "Invitation à un évènement",
+              message: "Cliquez pour répondre",
+              is_read: false,
+              metadata: { eventId: "event-123", invitationId: "inv-123" },
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+          unreadCount: 1,
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) });
+
+    render(<NotificationBell />);
+
+    fireEvent.click(screen.getByLabelText("Notifications"));
+
+    fireEvent.click(await screen.findByText("Invitation à un évènement"));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/events/event-123/join?invitationId=inv-123");
+    });
+  });
+
+  it("keeps only pending invitations visible while hiding read generic and answered invitations", async () => {
+    localStorage.setItem("token", "jwt");
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ unreadCount: 1 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: "notif-read",
+              user_id: 1,
+              type: "generic",
+              title: "Notification déjà traitée",
+              message: "Déjà lue",
+              is_read: true,
+              metadata: {},
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "notif-unread",
+              user_id: 1,
+              type: "generic",
+              title: "Notification active",
+              message: "À traiter",
+              is_read: false,
+              metadata: {},
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "notif-invite-read",
+              user_id: 1,
+              type: "invitation",
+              title: "Invitation déjà lue",
+              message: "Toujours accessible",
+              is_read: true,
+              metadata: { eventId: "evt-1" },
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "notif-invite-answered",
+              user_id: 1,
+              type: "invitation",
+              title: "Invitation répondue",
+              message: "Ne doit plus apparaître",
+              is_read: true,
+              metadata: { eventId: "evt-2", invitationStatus: "declined" },
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+
+    render(<NotificationBell />);
+
+    fireEvent.click(screen.getByLabelText("Notifications"));
+
+    expect(await screen.findByText("Notification active")).toBeInTheDocument();
+    expect(screen.getByText("Invitation déjà lue")).toBeInTheDocument();
+    expect(screen.queryByText("Invitation répondue")).not.toBeInTheDocument();
+    expect(screen.queryByText("Notification déjà traitée")).not.toBeInTheDocument();
+  });
+
+  it("shows a non-blocking error and allows retrying the notifications fetch", async () => {
+    localStorage.setItem("token", "jwt");
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ unreadCount: 2 }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ message: "boom" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [],
+          unreadCount: 2,
+        }),
+      });
+
+    render(<NotificationBell />);
+
+    fireEvent.click(screen.getByLabelText("Notifications"));
+
+    expect(
+      await screen.findByText("Impossible de charger les notifications pour le moment.")
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Réessayer"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+  });
+
   it("closes dropdown when clicking outside", async () => {
     localStorage.setItem("token", "jwt");
 
