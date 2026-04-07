@@ -301,35 +301,42 @@ export default function EventPage() {
           {/* Sidebar / Actions */}
           <div className="space-y-6">
             {/* Section Tirage au sort */}
-            {!event.drawDone && participants.length >= 2 && (
+            {!event.drawDone && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">🎲 Tirage au sort</h3>
+
                 {drawError && (
                   <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
                     {drawError}
                   </div>
                 )}
+
                 {drawSuccess && (
                   <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm">
                     {drawSuccess}
                   </div>
                 )}
+
                 <p className="text-sm text-gray-500 mb-4">
-                  {participants.length} participants prêts. Lancez le tirage pour assigner les
-                  cadeaux !
+                  {participants.length >= 2
+                    ? `${participants.length} participants prêts. Lancez le tirage pour assigner les cadeaux !`
+                    : "Le tirage au sort nécessite au moins 2 participants."}
                 </p>
+
                 <button
                   type="button"
                   onClick={handleDraw}
-                  disabled={drawLoading}
-                  className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors shadow-sm disabled:opacity-50"
+                  disabled={drawLoading || participants.length < 2}
+                  className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors shadow-sm"
                 >
                   {drawLoading ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   ) : (
                     <span className="mr-2">🎲</span>
                   )}
-                  Lancer le tirage au sort
+                  {participants.length >= 2
+                    ? "Lancer le tirage au sort"
+                    : "Pas assez de participants"}
                 </button>
               </div>
             )}
