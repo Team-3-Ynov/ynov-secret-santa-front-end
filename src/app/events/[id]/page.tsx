@@ -5,6 +5,13 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import InviteDialog from "@/components/InviteDialog";
 
+type AffinityValue = "avoid" | "neutral" | "favorable";
+
+interface AffinityRecord {
+  target_id: number;
+  affinity: AffinityValue;
+}
+
 interface Event {
   id: string;
   title: string;
@@ -28,11 +35,19 @@ interface Assignment {
   recipientEmail: string;
 }
 
+const AFFINITY_BADGE: Record<AffinityValue, { label: string; className: string }> = {
+  avoid: { label: "Éviter", className: "bg-red-100 text-red-700" },
+  neutral: { label: "Neutre", className: "bg-gray-100 text-gray-500" },
+  favorable: { label: "Favorable", className: "bg-green-100 text-green-700" },
+};
+
 export default function EventPage() {
   const { id } = useParams();
   const [event, setEvent] = useState<Event | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
+  const [affinities, setAffinities] = useState<Map<number, AffinityValue>>(new Map());
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -52,15 +67,27 @@ export default function EventPage() {
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-      // Fetch event and participants in parallel
-      const [eventRes, participantsRes] = await Promise.all([
+      const [eventRes, participantsRes, affinitiesRes, meRes] = await Promise.all([
         fetch(`${apiUrl}/api/events/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${apiUrl}/api/events/${id}/participants`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
+        fetch(`${apiUrl}/api/events/${id}/affinities`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${apiUrl}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
+
+      // Récupérer l'id de l'utilisateur courant depuis l'API
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        const userId = meData?.data?.user?.id ?? meData?.user?.id ?? meData?.id ?? null;
+        if (userId) setCurrentUserId(userId);
+      }
 
       if (!eventRes.ok) {
         if (eventRes.status === 404) {
@@ -79,6 +106,16 @@ export default function EventPage() {
       if (participantsRes.ok) {
         const participantsResult = await participantsRes.json();
         setParticipants(participantsResult.data || participantsResult || []);
+      }
+
+      if (affinitiesRes.ok) {
+        const affinitiesResult = await affinitiesRes.json();
+        const list: AffinityRecord[] = affinitiesResult.data || [];
+        const map = new Map<number, AffinityValue>();
+        for (const a of list) {
+          map.set(a.target_id, a.affinity);
+        }
+        setAffinities(map);
       }
 
       // Fetch my assignment if draw is done
@@ -270,6 +307,29 @@ export default function EventPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Participants ({participants.length})
               </h2>
+              {(() => {
+                const isCurrentUserParticipant = participants.some((p) => p.id === currentUserId);
+                if (!event.drawDone && participants.length > 1 && isCurrentUserParticipant) {
+                  return (
+                    <p className="text-sm text-gray-500 mb-4">
+                      Cliquez sur un participant pour définir votre affinité.
+                    </p>
+                  );
+                }
+                if (
+                  !event.drawDone &&
+                  participants.length > 1 &&
+                  !isCurrentUserParticipant &&
+                  currentUserId !== null
+                ) {
+                  return (
+                    <p className="text-sm text-amber-600 mb-4">
+                      Rejoignez l&apos;événement pour pouvoir définir vos affinités.
+                    </p>
+                  );
+                }
+                return null;
+              })()}
               {participants.length === 0 ? (
                 <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500">
                   La liste des participants apparaîtra ici une fois qu&apos;ils auront accepté
@@ -277,22 +337,63 @@ export default function EventPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {participants.map((participant) => (
-                    <div
-                      key={participant.id}
-                      className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                        <span className="text-red-600 font-semibold text-sm">
-                          {participant.username?.charAt(0).toUpperCase() || "?"}
-                        </span>
+                  {participants.map((participant) => {
+                    const isCurrentUser = participant.id === currentUserId;
+                    const isCurrentUserParticipant = participants.some(
+                      (p) => p.id === currentUserId
+                    );
+                    const affinity = affinities.get(participant.id);
+                    const badge =
+                      affinity && affinity !== "neutral" ? AFFINITY_BADGE[affinity] : null;
+                    const canSetAffinity =
+                      !isCurrentUser && !event.drawDone && isCurrentUserParticipant;
+
+                    const cardContent = (
+                      <>
+                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                          <span className="text-red-600 font-semibold text-sm">
+                            {participant.username?.charAt(0).toUpperCase() || "?"}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900">{participant.username}</p>
+                          <p className="text-sm text-gray-500 truncate">{participant.email}</p>
+                        </div>
+                        {isCurrentUser ? (
+                          <span className="text-xs text-gray-400 italic">Vous</span>
+                        ) : badge ? (
+                          <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`}
+                          >
+                            {badge.label}
+                          </span>
+                        ) : canSetAffinity ? (
+                          <span className="text-xs text-gray-400">→</span>
+                        ) : null}
+                      </>
+                    );
+
+                    if (canSetAffinity) {
+                      return (
+                        <Link
+                          key={participant.id}
+                          href={`/events/${id}/participants/${participant.id}`}
+                          className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
+                          {cardContent}
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={participant.id}
+                        className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                      >
+                        {cardContent}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{participant.username}</p>
-                        <p className="text-sm text-gray-500">{participant.email}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
