@@ -6,11 +6,12 @@ import LoginPage from "@/app/auth/login/page";
 import SignupPage from "@/app/auth/signup/page";
 
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 const fetchMock = vi.fn();
 const getSearchParam = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useSearchParams: () => ({ get: getSearchParam }),
 }));
 

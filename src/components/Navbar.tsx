@@ -12,17 +12,28 @@ export default function Navbar() {
   const [, startTransition] = useTransition();
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
-    const token = localStorage.getItem("token");
-    startTransition(() => {
-      setIsLoggedIn(!!token);
-    });
-  }, []); // Re-vérifier à chaque changement de page
+    const syncAuthState = () => {
+      const token = localStorage.getItem("token");
+      startTransition(() => {
+        setIsLoggedIn(!!token);
+      });
+    };
+
+    syncAuthState();
+    globalThis.addEventListener("storage", syncAuthState);
+    globalThis.addEventListener("auth-changed", syncAuthState as EventListener);
+
+    return () => {
+      globalThis.removeEventListener("storage", syncAuthState);
+      globalThis.removeEventListener("auth-changed", syncAuthState as EventListener);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
+    globalThis.dispatchEvent(new Event("auth-changed"));
     router.push("/");
   };
 
