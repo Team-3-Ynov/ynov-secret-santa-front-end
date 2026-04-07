@@ -241,7 +241,7 @@ export default function InvitationsPage() {
                     className="text-sm font-medium text-gray-600 hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-400"
                     aria-label={`Décliner l'invitation ${notification.title}`}
                   >
-                    {isDeclining ? "Déclinaison..." : "Décliner"}
+                    {isDeclining ? "Décliner..." : "Décliner"}
                   </button>
                 </div>
               </div>
