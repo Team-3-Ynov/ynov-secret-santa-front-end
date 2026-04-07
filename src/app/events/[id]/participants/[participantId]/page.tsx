@@ -123,7 +123,8 @@ export default function AffinityPage() {
           return;
         }
 
-        const list: Participant[] = (await participantsRes.json()).data || [];
+        const participantsResult = await participantsRes.json();
+        const list: Participant[] = participantsResult?.data || participantsResult || [];
         const found = list.find((p) => p.id === Number(participantId));
         if (!found) {
           setError("Participant non trouvé dans cet événement.");
@@ -204,9 +205,16 @@ export default function AffinityPage() {
   }
 
   if (error && !participant) {
-    const normalizedError = error.toLowerCase();
-    const isNotParticipant =
-      normalizedError.includes("participant") || normalizedError.includes("accepté");
+    const normalizedError = error.trim().toLowerCase();
+    // Only show the "join event" prompt for errors that specifically mean the
+    // current user is not an accepted participant — not for generic fetch errors
+    // or "participant not found" (which refers to the target, not the viewer).
+    const mustJoinEventErrors = new Set([
+      "vous n'êtes pas un participant accepté de cet événement.",
+      "vous devez rejoindre cet événement pour définir des affinités.",
+      "vous devez être participant pour définir des affinités.",
+    ]);
+    const isNotParticipant = mustJoinEventErrors.has(normalizedError);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="text-center space-y-4 max-w-sm">
