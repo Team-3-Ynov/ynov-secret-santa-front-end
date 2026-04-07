@@ -16,8 +16,12 @@ export default function JoinEventPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Construire l'URL de redirection avec le token d'invitation
-  const redirectUrl = inviteToken
-    ? `/events/${id}/join?token=${inviteToken}`
+  const redirectQuery = new URLSearchParams();
+  if (inviteToken) {
+    redirectQuery.set("token", inviteToken);
+  }
+  const redirectUrl = redirectQuery.toString()
+    ? `/events/${id}/join?${redirectQuery.toString()}`
     : `/events/${id}/join`;
 
   useEffect(() => {
@@ -33,11 +37,6 @@ export default function JoinEventPage() {
       return;
     }
 
-    if (!inviteToken) {
-      setError("Token d'invitation manquant. Veuillez utiliser le lien d'invitation complet.");
-      return;
-    }
-
     setJoining(true);
     setError("");
 
@@ -49,7 +48,7 @@ export default function JoinEventPage() {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ token: inviteToken }),
+        body: JSON.stringify(inviteToken ? { token: inviteToken } : {}),
       });
 
       const data = await res.json();
@@ -66,8 +65,16 @@ export default function JoinEventPage() {
         throw new Error(data.message || "Erreur lors de la tentative de rejoindre l'évènement");
       }
 
-      setSuccess("Vous avez rejoint l'évènement avec succès !");
-      // Redirect to event page after 2 seconds
+      const message = data?.message || "Vous avez rejoint l'évènement avec succès !";
+      const alreadyJoined = typeof message === "string" && message.includes("déjà rejoint");
+
+      setSuccess(message);
+      if (alreadyJoined) {
+        router.push(`/events/${id}`);
+        return;
+      }
+
+      // Redirect to event page after 2 seconds on fresh join
       setTimeout(() => {
         router.push(`/events/${id}`);
       }, 2000);

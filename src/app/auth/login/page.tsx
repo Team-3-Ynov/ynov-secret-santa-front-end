@@ -5,13 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +114,14 @@ function LoginForm() {
         <div className="text-center">
           <p className="text-sm text-gray-600">
             Pas encore de compte ?{" "}
-            <Link href="/auth/signup" className="font-medium text-red-600 hover:underline">
+            <Link
+              href={
+                redirectUrl
+                  ? `/auth/signup?redirect=${encodeURIComponent(redirectUrl)}`
+                  : "/auth/signup"
+              }
+              className="font-medium text-red-600 hover:underline"
+            >
               S&apos;inscrire
             </Link>
           </p>
