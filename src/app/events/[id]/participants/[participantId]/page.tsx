@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type AffinityValue = "avoid" | "neutral" | "favorable";
 
@@ -47,7 +47,9 @@ const AFFINITY_OPTIONS: {
 ];
 
 export default function AffinityPage() {
-  const { id: eventId, participantId } = useParams();
+  const params = useParams();
+  const eventId = typeof params.id === "string" ? params.id : undefined;
+  const participantId = typeof params.participantId === "string" ? params.participantId : undefined;
   const router = useRouter();
 
   const [participant, setParticipant] = useState<Participant | null>(null);
@@ -57,6 +59,13 @@ export default function AffinityPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!eventId || !participantId) return;
@@ -88,6 +97,11 @@ export default function AffinityPage() {
           }),
         ]);
 
+        if (meRes.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/auth/login");
+          return;
+        }
         if (meRes.ok) {
           const meData = await meRes.json();
           myId = meData?.data?.user?.id ?? meData?.user?.id ?? meData?.id ?? null;
@@ -99,25 +113,30 @@ export default function AffinityPage() {
           return;
         }
 
-        const eventData = (await eventRes.json()).data;
+        const eventResult = await eventRes.json();
+        const eventData = eventResult?.data || eventResult;
         setDrawDone(!!eventData?.drawDone);
 
-        if (participantsRes.ok) {
-          const list: Participant[] = (await participantsRes.json()).data || [];
-          const found = list.find((p) => p.id === Number(participantId));
-          if (!found) {
-            setError("Participant non trouvé dans cet événement.");
-            setLoading(false);
-            return;
-          }
-          // Guard: cannot set affinity for yourself
-          if (myId !== null && found.id === myId) {
-            setError("Vous ne pouvez pas définir une affinité envers vous-même.");
-            setLoading(false);
-            return;
-          }
-          setParticipant(found);
+        if (!participantsRes.ok) {
+          setError("Impossible de charger ce participant pour cet événement.");
+          setLoading(false);
+          return;
         }
+
+        const list: Participant[] = (await participantsRes.json()).data || [];
+        const found = list.find((p) => p.id === Number(participantId));
+        if (!found) {
+          setError("Participant non trouvé dans cet événement.");
+          setLoading(false);
+          return;
+        }
+        // Guard: cannot set affinity for yourself
+        if (myId !== null && found.id === myId) {
+          setError("Vous ne pouvez pas définir une affinité envers vous-même.");
+          setLoading(false);
+          return;
+        }
+        setParticipant(found);
 
         if (affinitiesRes.ok) {
           const list = (await affinitiesRes.json()).data || [];
@@ -167,7 +186,8 @@ export default function AffinityPage() {
 
       setCurrentAffinity(value);
       setSuccessMessage("Affinité enregistrée !");
-      setTimeout(() => setSuccessMessage(""), 2500);
+      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+      successTimeoutRef.current = setTimeout(() => setSuccessMessage(""), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
@@ -184,7 +204,9 @@ export default function AffinityPage() {
   }
 
   if (error && !participant) {
-    const isNotParticipant = error.includes("participant") || error.includes("accepté");
+    const normalizedError = error.toLowerCase();
+    const isNotParticipant =
+      normalizedError.includes("participant") || normalizedError.includes("accepté");
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="text-center space-y-4 max-w-sm">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import InviteDialog from "@/components/InviteDialog";
 
@@ -43,6 +43,7 @@ const AFFINITY_BADGE: Record<AffinityValue, { label: string; className: string }
 
 export default function EventPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [event, setEvent] = useState<Event | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
@@ -83,10 +84,15 @@ export default function EventPage() {
       ]);
 
       // Récupérer l'id de l'utilisateur courant depuis l'API
+      if (meRes.status === 401) {
+        localStorage.removeItem("token");
+        router.push("/auth/login");
+        return;
+      }
       if (meRes.ok) {
         const meData = await meRes.json();
         const userId = meData?.data?.user?.id ?? meData?.user?.id ?? meData?.id ?? null;
-        if (userId) setCurrentUserId(userId);
+        if (userId !== null) setCurrentUserId(userId);
       }
 
       if (!eventRes.ok) {
@@ -141,7 +147,7 @@ export default function EventPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, router]);
 
   useEffect(() => {
     if (id) {
@@ -337,63 +343,65 @@ export default function EventPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {participants.map((participant) => {
-                    const isCurrentUser = participant.id === currentUserId;
+                  {(() => {
                     const isCurrentUserParticipant = participants.some(
                       (p) => p.id === currentUserId
                     );
-                    const affinity = affinities.get(participant.id);
-                    const badge =
-                      affinity && affinity !== "neutral" ? AFFINITY_BADGE[affinity] : null;
-                    const canSetAffinity =
-                      !isCurrentUser && !event.drawDone && isCurrentUserParticipant;
+                    return participants.map((participant) => {
+                      const isCurrentUser = participant.id === currentUserId;
+                      const affinity = affinities.get(participant.id);
+                      const badge =
+                        affinity && affinity !== "neutral" ? AFFINITY_BADGE[affinity] : null;
+                      const canSetAffinity =
+                        !isCurrentUser && !event.drawDone && isCurrentUserParticipant;
 
-                    const cardContent = (
-                      <>
-                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
-                          <span className="text-red-600 font-semibold text-sm">
-                            {participant.username?.charAt(0).toUpperCase() || "?"}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900">{participant.username}</p>
-                          <p className="text-sm text-gray-500 truncate">{participant.email}</p>
-                        </div>
-                        {isCurrentUser ? (
-                          <span className="text-xs text-gray-400 italic">Vous</span>
-                        ) : badge ? (
-                          <span
-                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`}
+                      const cardContent = (
+                        <>
+                          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                            <span className="text-red-600 font-semibold text-sm">
+                              {participant.username?.charAt(0).toUpperCase() || "?"}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900">{participant.username}</p>
+                            <p className="text-sm text-gray-500 truncate">{participant.email}</p>
+                          </div>
+                          {isCurrentUser ? (
+                            <span className="text-xs text-gray-400 italic">Vous</span>
+                          ) : badge ? (
+                            <span
+                              className={`text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`}
+                            >
+                              {badge.label}
+                            </span>
+                          ) : canSetAffinity ? (
+                            <span className="text-xs text-gray-400">→</span>
+                          ) : null}
+                        </>
+                      );
+
+                      if (canSetAffinity) {
+                        return (
+                          <Link
+                            key={participant.id}
+                            href={`/events/${id}/participants/${participant.id}`}
+                            className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                           >
-                            {badge.label}
-                          </span>
-                        ) : canSetAffinity ? (
-                          <span className="text-xs text-gray-400">→</span>
-                        ) : null}
-                      </>
-                    );
+                            {cardContent}
+                          </Link>
+                        );
+                      }
 
-                    if (canSetAffinity) {
                       return (
-                        <Link
+                        <div
                           key={participant.id}
-                          href={`/events/${id}/participants/${participant.id}`}
-                          className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                          className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                         >
                           {cardContent}
-                        </Link>
+                        </div>
                       );
-                    }
-
-                    return (
-                      <div
-                        key={participant.id}
-                        className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
-                      >
-                        {cardContent}
-                      </div>
-                    );
-                  })}
+                    });
+                  })()}
                 </div>
               )}
             </div>
