@@ -10,8 +10,6 @@ export default function JoinEventPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("token"); // Token d'invitation depuis l'URL
-  const invitationId = searchParams.get("invitationId");
-  const inviteKey = inviteToken ?? invitationId;
 
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
@@ -72,6 +70,8 @@ export default function JoinEventPage() {
       const alreadyJoined = typeof message === "string" && message.includes("déjà rejoint");
 
       setSuccess(message);
+      globalThis.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
+
       if (alreadyJoined) {
         router.push(`/events/${id}`);
         return;
