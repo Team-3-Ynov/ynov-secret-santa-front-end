@@ -188,7 +188,14 @@ function SignupForm() {
         <div className="text-center">
           <p className="text-sm text-gray-600">
             Déjà un compte ?{" "}
-            <Link href="/auth/login" className="font-medium text-red-600 hover:underline">
+            <Link
+              href={
+                redirectUrl
+                  ? `/auth/login?redirect=${encodeURIComponent(redirectUrl)}`
+                  : "/auth/login"
+              }
+              className="font-medium text-red-600 hover:underline"
+            >
               Se connecter
             </Link>
           </p>
