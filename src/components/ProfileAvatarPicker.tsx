@@ -2,7 +2,7 @@ import Image from "next/image";
 import { PROFILE_AVATARS, type ProfileAvatarImage } from "@/constants/profileAvatars";
 
 interface ProfileAvatarPickerProps {
-  value: string;
+  value: ProfileAvatarImage | "";
   onChange: (avatar: ProfileAvatarImage) => void;
   disabled?: boolean;
   error?: string | null;
