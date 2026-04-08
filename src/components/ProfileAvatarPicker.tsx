@@ -17,7 +17,7 @@ export default function ProfileAvatarPicker({
   return (
     <fieldset className="space-y-3" aria-describedby={error ? "profile-avatar-error" : undefined}>
       <legend className="text-sm font-medium text-gray-700">Image de profil</legend>
-      <p className="text-xs text-gray-500">Choisissez une image parmi les avatars proposes.</p>
+      <p className="text-xs text-gray-500">Choisissez une image parmi les avatars proposés.</p>
 
       <div className="grid grid-cols-5 gap-2">
         {PROFILE_AVATARS.map((avatar) => {
