@@ -523,7 +523,7 @@ export default function ProfilePage() {
                           className="rounded-full"
                         />
                       ) : (
-                        <span className="text-gray-500 text-sm">Aucune image selectionnee</span>
+                        <span className="text-gray-500 text-sm">Aucune image sélectionnée</span>
                       )}
                     </div>
                   </div>
