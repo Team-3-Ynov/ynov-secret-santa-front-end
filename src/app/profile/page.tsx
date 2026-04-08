@@ -26,6 +26,13 @@ interface User {
   };
 }
 
+interface ProfileFormData {
+  username: string;
+  firstName: string;
+  lastName: string;
+  profileImage: ProfileAvatarImage | "";
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -33,7 +40,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProfileFormData>({
     username: "",
     firstName: "",
     lastName: "",
