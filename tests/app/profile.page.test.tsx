@@ -185,7 +185,12 @@ describe("Profile page", () => {
     const saveCall = fetchMock.mock.calls.find((call) =>
       String(call[0]).includes("/api/users/me")
     );
-    const payload = JSON.parse(saveCall?.[1]?.body as string);
+    expect(saveCall).toBeDefined();
+
+    const requestBody = saveCall?.[1]?.body;
+    expect(typeof requestBody).toBe("string");
+
+    const payload = JSON.parse(requestBody as string);
     expect(payload.profile_image).toBe("/avatars/avatar-2.svg");
   });
 
