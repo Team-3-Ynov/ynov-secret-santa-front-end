@@ -28,11 +28,11 @@ describe("ProfileAvatarPicker", () => {
       <ProfileAvatarPicker
         value=""
         onChange={vi.fn()}
-        error="Veuillez selectionner une image de profil."
+        error="Veuillez sélectionner une image de profil."
       />
     );
 
-    expect(screen.getByText("Veuillez selectionner une image de profil.")).toBeInTheDocument();
+    expect(screen.getByText("Veuillez sélectionner une image de profil.")).toBeInTheDocument();
   });
 });
 
