@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Avatar Sapin">
+  <rect width="120" height="120" rx="60" fill="#ecfeff" />
+  <rect x="54" y="84" width="12" height="20" rx="3" fill="#92400e" />
+  <path d="M60 24l-26 28h14l-18 22h18l-14 18h52L72 74h18L72 52h14z" fill="#15803d" />
+  <circle cx="60" cy="30" r="5" fill="#facc15" />
+  <circle cx="50" cy="58" r="3" fill="#ef4444" />
+  <circle cx="70" cy="64" r="3" fill="#3b82f6" />
+  <circle cx="58" cy="76" r="3" fill="#f97316" />
+</svg>

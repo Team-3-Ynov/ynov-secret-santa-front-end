@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import PasswordRequirements from "@/components/PasswordRequirements";
+import ProfileAvatarPicker from "@/components/ProfileAvatarPicker";
+import {
+  DEFAULT_PROFILE_AVATAR_IMAGE,
+  isValidProfileAvatarImage,
+  type ProfileAvatarImage,
+} from "@/constants/profileAvatars";
 
 function SignupForm() {
   const router = useRouter();
@@ -15,6 +21,9 @@ function SignupForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [profileImage, setProfileImage] = useState<ProfileAvatarImage>(
+    DEFAULT_PROFILE_AVATAR_IMAGE
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,6 +43,10 @@ function SignupForm() {
     setError(null);
     setSuccess(null);
 
+    const selectedProfileImage = isValidProfileAvatarImage(profileImage)
+      ? profileImage
+      : DEFAULT_PROFILE_AVATAR_IMAGE;
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: "POST",
@@ -42,6 +55,7 @@ function SignupForm() {
           email,
           password,
           username,
+          profile_image: selectedProfileImage,
           ...(firstName.trim() && { first_name: firstName.trim() }),
           ...(lastName.trim() && { last_name: lastName.trim() }),
         }),
@@ -69,6 +83,7 @@ function SignupForm() {
       setFirstName("");
       setLastName("");
       setPassword("");
+      setProfileImage(DEFAULT_PROFILE_AVATAR_IMAGE);
 
       // Redirect to login page, preserving the redirect URL
       setTimeout(() => {
@@ -194,6 +209,15 @@ function SignupForm() {
             />
             <PasswordRequirements password={password} />
           </div>
+
+          <ProfileAvatarPicker
+            value={profileImage}
+            onChange={(avatar: ProfileAvatarImage) => {
+              setProfileImage(avatar);
+              setError(null);
+            }}
+            disabled={isLoading}
+          />
 
           <button
             type="submit"

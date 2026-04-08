@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Avatar Pere Noel">
+  <rect width="120" height="120" rx="60" fill="#fee2e2" />
+  <circle cx="60" cy="60" r="26" fill="#fca5a5" />
+  <path d="M38 52h44L74 36H46z" fill="#dc2626" />
+  <rect x="50" y="31" width="20" height="8" rx="4" fill="#ffffff" />
+  <circle cx="50" cy="58" r="4" fill="#111827" />
+  <circle cx="70" cy="58" r="4" fill="#111827" />
+  <circle cx="60" cy="68" r="4" fill="#ef4444" />
+  <path d="M45 72c4 8 10 12 15 12s11-4 15-12" fill="#ffffff" />
+  <rect x="40" y="84" width="40" height="18" rx="9" fill="#ffffff" />
+</svg>
