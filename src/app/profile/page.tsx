@@ -142,7 +142,7 @@ export default function ProfilePage() {
     setError("");
 
     if (!isValidProfileAvatarImage(formData.profileImage)) {
-      setError("Veuillez selectionner une image de profil valide.");
+      setError("Veuillez sélectionner une image de profil valide.");
       setIsSaving(false);
       return;
     }
