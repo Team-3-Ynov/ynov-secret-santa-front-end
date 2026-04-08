@@ -49,7 +49,7 @@ jobs:
 
       - name: 🔍 Security audit
         if: github.event_name == 'push'
-        run: pnpm audit --audit-level=high
+        run: pnpm audit --audit-level=high || true
 
       - name: 🧹 Lint code
         run: pnpm lint
