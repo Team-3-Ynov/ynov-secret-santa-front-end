@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Avatar Cadeau">
+  <rect width="120" height="120" rx="60" fill="#e0e7ff" />
+  <rect x="30" y="44" width="60" height="50" rx="8" fill="#2563eb" />
+  <rect x="56" y="44" width="8" height="50" fill="#fef08a" />
+  <rect x="30" y="64" width="60" height="8" fill="#fef08a" />
+  <path d="M60 44c-10 0-15-10-8-15 6-4 13 2 13 9v6z" fill="#fef08a" />
+  <path d="M60 44c10 0 15-10 8-15-6-4-13 2-13 9v6z" fill="#fde047" />
+</svg>

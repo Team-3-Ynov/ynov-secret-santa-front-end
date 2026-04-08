@@ -1,8 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import ProfileAvatarPicker from "@/components/ProfileAvatarPicker";
+import {
+  getProfileAvatar,
+  isValidProfileAvatarImage,
+  type ProfileAvatarImage,
+} from "@/constants/profileAvatars";
 
 interface User {
   id: string;
@@ -10,12 +17,20 @@ interface User {
   username?: string;
   firstName?: string;
   lastName?: string;
+  profileImage?: ProfileAvatarImage;
   createdAt?: string;
   stats?: {
     eventsCreated: number;
     participations: number;
     giftsOffered: number;
   };
+}
+
+interface ProfileFormData {
+  username: string;
+  firstName: string;
+  lastName: string;
+  profileImage: ProfileAvatarImage | "";
 }
 
 export default function ProfilePage() {
@@ -25,10 +40,11 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProfileFormData>({
     username: "",
     firstName: "",
     lastName: "",
+    profileImage: "",
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,12 +88,14 @@ export default function ProfilePage() {
         const apiUser = result.data?.user || result.data;
 
         // Map backend snake_case to frontend camelCase
+        const selectedAvatar = getProfileAvatar(apiUser.profile_image);
         const userData: User = {
           id: String(apiUser.id),
           email: apiUser.email,
           username: apiUser.username,
           firstName: apiUser.first_name,
           lastName: apiUser.last_name,
+          profileImage: selectedAvatar?.src,
           createdAt: apiUser.created_at,
           stats: apiUser.stats,
         };
@@ -87,6 +105,7 @@ export default function ProfilePage() {
           username: userData.username || "",
           firstName: userData.firstName || "",
           lastName: userData.lastName || "",
+          profileImage: userData.profileImage || "",
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
@@ -105,6 +124,7 @@ export default function ProfilePage() {
         username: user?.username || "",
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
+        profileImage: user?.profileImage || "",
       });
     }
     setError("");
@@ -128,6 +148,12 @@ export default function ProfilePage() {
     setIsSaving(true);
     setError("");
 
+    if (!isValidProfileAvatarImage(formData.profileImage)) {
+      setError("Veuillez sélectionner une image de profil valide.");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -142,6 +168,7 @@ export default function ProfilePage() {
           username: formData.username,
           first_name: formData.firstName,
           last_name: formData.lastName,
+          profile_image: formData.profileImage,
         }),
       });
 
@@ -158,6 +185,7 @@ export default function ProfilePage() {
 
       const result = await res.json();
       const apiUser = result.data.user;
+      const selectedAvatar = getProfileAvatar(apiUser.profile_image);
 
       const updatedUserData: User = {
         id: String(apiUser.id),
@@ -165,6 +193,7 @@ export default function ProfilePage() {
         username: apiUser.username,
         firstName: apiUser.first_name,
         lastName: apiUser.last_name,
+        profileImage: selectedAvatar?.src || formData.profileImage,
         createdAt: apiUser.created_at,
         stats: user?.stats, // Keep existing stats if not returned by update
       };
@@ -174,6 +203,7 @@ export default function ProfilePage() {
         username: updatedUserData.username || "",
         firstName: updatedUserData.firstName || "",
         lastName: updatedUserData.lastName || "",
+        profileImage: updatedUserData.profileImage || "",
       });
       setIsEditing(false);
       setSaveSuccess(true);
@@ -241,6 +271,8 @@ export default function ProfilePage() {
     );
   }
 
+  const selectedAvatar = getProfileAvatar(user?.profileImage);
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -250,7 +282,17 @@ export default function ProfilePage() {
             <div className="absolute -bottom-12 left-8">
               <div className="h-24 w-24 rounded-full bg-white p-1 shadow-lg">
                 <div className="h-full w-full rounded-full bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-600">
-                  {getInitials(user)}
+                  {selectedAvatar ? (
+                    <Image
+                      src={selectedAvatar.src}
+                      alt={selectedAvatar.label}
+                      width={96}
+                      height={96}
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    getInitials(user)
+                  )}
                 </div>
               </div>
             </div>
@@ -465,6 +507,34 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
+
+                {isEditing ? (
+                  <ProfileAvatarPicker
+                    value={formData.profileImage}
+                    onChange={(avatar: ProfileAvatarImage) => {
+                      setError("");
+                      setFormData((prev) => ({ ...prev, profileImage: avatar }));
+                    }}
+                    disabled={isSaving}
+                  />
+                ) : (
+                  <div>
+                    <p className="block text-sm font-medium text-gray-500 mb-1">Image de profil</p>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 inline-flex">
+                      {selectedAvatar ? (
+                        <Image
+                          src={selectedAvatar.src}
+                          alt={selectedAvatar.label}
+                          width={56}
+                          height={56}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <span className="text-gray-500 text-sm">Aucune image sélectionnée</span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {isEditing && (
                   <div className="pt-4 flex gap-3">

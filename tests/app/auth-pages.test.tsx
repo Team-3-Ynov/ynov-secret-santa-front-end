@@ -47,6 +47,8 @@ describe("Auth pages", () => {
     expect(screen.getByText("Créer un compte")).toBeInTheDocument();
     expect(screen.getByLabelText("Adresse email")).toBeInTheDocument();
     expect(screen.getByLabelText("Nom d'utilisateur")).toBeInTheDocument();
+    expect(screen.getByText("Image de profil")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Avatar 1" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Créer mon compte" })).toBeInTheDocument();
   });
 
@@ -123,6 +125,10 @@ describe("Auth pages", () => {
       expect(screen.getByText("Account created successfully! Redirecting to login...")).toBeInTheDocument();
     });
 
+    const signupCall = fetchMock.mock.calls[0];
+    const signupPayload = JSON.parse(signupCall[1].body as string);
+    expect(signupPayload.profile_image).toBe("/avatars/avatar-1.svg");
+
     await waitFor(
       () => {
         expect(mockPush).toHaveBeenCalledWith("/auth/login");
@@ -148,6 +154,7 @@ describe("Auth pages", () => {
     fireEvent.change(screen.getByLabelText("Mot de passe"), {
       target: { value: "Password123" },
     });
+    fireEvent.click(screen.getByRole("radio", { name: "Avatar 2" }));
     fireEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
 
     await waitFor(
@@ -156,5 +163,35 @@ describe("Auth pages", () => {
       },
       { timeout: 2500 }
     );
+  });
+
+  it("submits signup with the default avatar when none is changed", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    render(<SignupPage />);
+
+    fireEvent.change(screen.getByLabelText("Adresse email"), {
+      target: { value: "new@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Nom d'utilisateur"), {
+      target: { value: "new_user" },
+    });
+    fireEvent.change(screen.getByLabelText("Mot de passe"), {
+      target: { value: "Password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/api/auth/register"),
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining('"profile_image":"/avatars/avatar-1.svg"'),
+        })
+      );
+    });
   });
 });
